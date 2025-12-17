@@ -4,393 +4,131 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#061b14" />
-
-  <!-- iOS “app-like” mode (best when Added to Home Screen) -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Jingle Jackpot" />
-
   <title>Webb’s Jingle Jackpot</title>
-
   <style>
     :root{
-      --bg1:#061b14;
-      --bg2:#0a2b20;
+      --bg1:#04130e;
+      --bg2:#0f2f24;
       --gold:#f6d36f;
-      --text:#f3fbf7;
+      --text:#f2fbf7;
       --muted:rgba(243,251,247,.78);
-      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --glass: rgba(255,255,255,.06);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color:var(--text);
       background:
-        radial-gradient(1200px 800px at 15% 15%, rgba(246,211,111,.10), transparent 55%),
-        radial-gradient(1200px 800px at 85% 30%, rgba(210,43,43,.12), transparent 60%),
+        radial-gradient(1200px 800px at 12% 8%, rgba(246,211,111,.12), transparent 60%),
+        radial-gradient(1200px 800px at 88% 16%, rgba(43,210,107,.14), transparent 60%),
+        radial-gradient(900px 640px at 10% 70%, rgba(210,43,43,.16), transparent 60%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
-
     /* Snow */
     .snow{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0;}
-    .flake{
-      position:absolute; top:-10vh;
-      border-radius:50%;
-      background:rgba(255,255,255,.9);
-      opacity:.85;
-      animation: fall linear infinite;
-      filter: blur(.2px);
-    }
-    @keyframes fall{
-      to { transform: translateY(120vh) translateX(var(--drift)); opacity:.2; }
-    }
+    .flake{position:absolute; top:-10vh; border-radius:50%; background:rgba(255,255,255,.9); opacity:.85; animation: fall linear infinite; filter: blur(.2px);}    
+    @keyframes fall{ to { transform: translateY(120vh) translateX(var(--drift)); opacity:.2; }}
 
-    /* Mobile-safe confetti: canvas (fast, no DOM spam) */
-    #confettiCanvas{
-      position:fixed; inset:0;
-      width:100vw; height:100vh;
-      pointer-events:none;
-      z-index:60;
+    /* Confetti */
+    #confettiCanvas{ position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:60; }
+    .glowBurst{ position:fixed; left:50%; top:48%; transform: translate(-50%,-50%) scale(.92); width:min(960px, 96vw); height:min(540px, 62vh); pointer-events:none; z-index:59; opacity:0; background:
+      radial-gradient(circle at 50% 45%, rgba(246,211,111,.25), transparent 62%),
+      radial-gradient(circle at 36% 40%, rgba(255,255,255,.07), transparent 58%),
+      radial-gradient(circle at 66% 44%, rgba(43,210,107,.14), transparent 62%),
+      radial-gradient(circle at 54% 63%, rgba(210,43,43,.12), transparent 65%);
     }
-    .glowBurst{
-      position:fixed;
-      left:50%; top:48%;
-      transform: translate(-50%,-50%) scale(.92);
-      width:min(920px, 96vw);
-      height:min(520px, 60vh);
-      pointer-events:none;
-      z-index:59;
-      opacity:0;
-      background:
-        radial-gradient(circle at 50% 45%, rgba(246,211,111,.25), transparent 62%),
-        radial-gradient(circle at 35% 40%, rgba(255,255,255,.07), transparent 58%),
-        radial-gradient(circle at 66% 44%, rgba(43,210,107,.14), transparent 62%),
-        radial-gradient(circle at 58% 60%, rgba(210,43,43,.12), transparent 65%);
-    }
-    .glowBurst.on{
-      animation: glowPop 760ms ease-out forwards;
-    }
-    @keyframes glowPop{
-      0%{ opacity:0; transform: translate(-50%,-50%) scale(.90); }
-      25%{ opacity:.95; }
-      100%{ opacity:0; transform: translate(-50%,-50%) scale(1.06); }
-    }
+    .glowBurst.on{ animation: glowPop 760ms ease-out forwards; }
+    @keyframes glowPop{ 0%{ opacity:0; transform: translate(-50%,-50%) scale(.90); } 25%{ opacity:.95; } 100%{ opacity:0; transform: translate(-50%,-50%) scale(1.06); }}
 
-    .wrap{
-      position:relative; z-index:1;
-      min-height:100svh;
-      display:flex; align-items:center; justify-content:center;
-      padding:
-        calc(18px + env(safe-area-inset-top))
-        calc(14px + env(safe-area-inset-right))
-        calc(24px + env(safe-area-inset-bottom))
-        calc(14px + env(safe-area-inset-left));
-    }
+    .wrap{ position:relative; z-index:1; min-height:100svh; display:flex; align-items:center; justify-content:center; padding:calc(18px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left)); }
 
-    .machine{
-      width:min(980px, 100%);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:26px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
-      padding:22px;
-    }
+    .machine{ width:min(1080px, 100%); background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); border:1px solid rgba(255,255,255,.10); border-radius:28px; box-shadow: var(--shadow); backdrop-filter: blur(10px); padding:22px; position:relative; overflow:hidden; }
+    .machine::after{ content:""; position:absolute; inset:4px; border-radius:24px; border:1px solid rgba(255,255,255,.06); pointer-events:none; }
 
-    .top{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:12px;
-      text-align:center;
-    }
-    h1{margin:0; font-size: clamp(22px, 3.0vw, 38px); letter-spacing:.2px;}
-    .sub{ margin:0; color:var(--muted); font-size:14px; line-height:1.35; }
+    .top{ display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; position:relative; }
+    h1{margin:0; font-size: clamp(24px, 3.2vw, 42px); letter-spacing:.4px; text-shadow: 0 12px 32px rgba(0,0,0,.38);}    
+    .badge{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; background: rgba(255,255,255,.07); border-radius:30px; border:1px solid rgba(255,255,255,.12); font-weight:800; letter-spacing:.3px; color: var(--gold); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 10px 30px rgba(0,0,0,.25);}    
+    .sub{ margin:0; color:var(--muted); font-size:15px; line-height:1.35; }
 
-    .lights{
-      display:flex; gap:10px; align-items:center; justify-content:center;
-      width:100%; padding-top:2px;
-    }
-    .bulb{
-      width:14px; height:14px; border-radius:50%;
-      border:1px solid rgba(255,255,255,.15);
-      animation: blink 1.1s infinite;
-    }
-    .bulb:nth-child(3n+1){ background: rgba(210,43,43,.85); animation-delay:.0s;}
+    .lights{ display:flex; gap:10px; align-items:center; justify-content:center; width:100%; padding-top:2px; flex-wrap:wrap; }
+    .bulb{ width:14px; height:14px; border-radius:50%; border:1px solid rgba(255,255,255,.15); animation: blink 1.1s infinite; box-shadow: 0 0 0 rgba(0,0,0,0); }
+    .bulb:nth-child(3n+1){ background: rgba(210,43,43,.9); animation-delay:.0s;}
     .bulb:nth-child(3n+2){ background: rgba(246,211,111,.95); animation-delay:.15s;}
-    .bulb:nth-child(3n+3){ background: rgba(43,210,107,.85); animation-delay:.3s;}
-    @keyframes blink{
-      0%,100%{ transform: translateY(0); filter:saturate(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
-      50%{ transform: translateY(-1px); filter:saturate(1.2); box-shadow: 0 0 22px rgba(246,211,111,.38); }
-    }
+    .bulb:nth-child(3n+3){ background: rgba(43,210,107,.9); animation-delay:.3s;}
+    @keyframes blink{ 0%,100%{ transform: translateY(0); filter:saturate(1); box-shadow: 0 0 0 rgba(0,0,0,0); } 50%{ transform: translateY(-1px); filter:saturate(1.2); box-shadow: 0 0 22px rgba(246,211,111,.38); }}
 
-    .panel{
-      margin-top:18px;
-      background: linear-gradient(180deg, rgba(15,58,43,.85), rgba(12,47,35,.85));
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:24px;
-      padding:18px;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
-    }
+    .panel{ margin-top:18px; background: linear-gradient(180deg, rgba(14,58,44,.90), rgba(10,43,32,.94)); border:1px solid rgba(255,255,255,.10); border-radius:26px; padding:18px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.22); position:relative; overflow:hidden; }
+    .panel::before{ content:""; position:absolute; inset:18px; border-radius:18px; border:1px solid rgba(255,255,255,.03); pointer-events:none; }
 
-    .reelsRow{
-      display:flex;
-      gap:14px;
-      justify-content:center;
-      flex-wrap:wrap;
-      align-items:stretch;
-    }
+    .statBar{ display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:10px; margin-top:6px; }
+    .stat{ background: var(--glass); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:10px 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.20); display:flex; flex-direction:column; gap:4px; min-height:76px; }
+    .stat .label{ text-transform:uppercase; font-size:11px; letter-spacing:.5px; color: var(--muted); }
+    .stat .value{ font-size:22px; font-weight:1000; letter-spacing:.3px; }
+    .stat small{ color: var(--muted); font-weight:700; }
+    .meter{ width:100%; height:10px; background: rgba(255,255,255,.06); border-radius:8px; overflow:hidden; position:relative; border:1px solid rgba(255,255,255,.10); }
+    .meter span{ position:absolute; left:0; top:0; bottom:0; width:22%; background: linear-gradient(90deg, #f6d36f, #2bd26b); box-shadow: 0 4px 16px rgba(0,0,0,.3); transition: width .3s ease; }
 
-    .reel{
-      width: clamp(120px, 26vw, 180px);
-      height: clamp(168px, 26vh, 198px);
-      border-radius:22px;
-      background: rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 10px 25px rgba(0,0,0,.35);
-      position:relative;
-      overflow:hidden;
-      flex: 1 1 auto;
-      max-width: 220px;
-    }
-    .reel::before, .reel::after{
-      content:"";
-      position:absolute; left:0; right:0;
-      height:44px; z-index:2; pointer-events:none;
-    }
-    .reel::before{top:0; background: linear-gradient(180deg, rgba(6,27,20,.90), rgba(6,27,20,0));}
+    .reelsRow{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; align-items:stretch; margin-top:12px; }
+    .reel{ width: clamp(120px, 26vw, 190px); height: clamp(170px, 26vh, 200px); border-radius:22px; background: rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 10px 25px rgba(0,0,0,.35); position:relative; overflow:hidden; flex: 1 1 auto; max-width: 220px; }
+    .reel::before, .reel::after{ content:""; position:absolute; left:0; right:0; height:46px; z-index:2; pointer-events:none; }
+    .reel::before{top:0; background: linear-gradient(180deg, rgba(6,27,20,.92), rgba(6,27,20,0));}
     .reel::after{bottom:0; background: linear-gradient(0deg, rgba(6,27,20,.90), rgba(6,27,20,0));}
+    .payline{ position:absolute; left:10px; right:10px; top:50%; transform: translateY(-50%); height:52px; border-radius:16px; border:2px solid rgba(246,211,111,.65); box-shadow: 0 0 24px rgba(246,211,111,.18); z-index:3; pointer-events:none; }
+    .reelGrid{ position:absolute; inset: 14px 0 14px 0; display:grid; grid-template-rows: repeat(3, 1fr); gap: 10px; padding: 0 12px; z-index:1; }
+    .cell{ height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:44px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); user-select:none; }
+    .cell.mid{ box-shadow: inset 0 0 0 1px rgba(0,0,0,.18), 0 0 20px rgba(246,211,111,.10); }
 
-    .payline{
-      position:absolute; left:10px; right:10px; top:50%;
-      transform: translateY(-50%);
-      height:52px;
-      border-radius:16px;
-      border:2px solid rgba(246,211,111,.65);
-      box-shadow: 0 0 24px rgba(246,211,111,.18);
-      z-index:3;
-      pointer-events:none;
-    }
-
-    .reelGrid{
-      position:absolute;
-      inset: 14px 0 14px 0;
-      display:grid;
-      grid-template-rows: repeat(3, 1fr);
-      gap: 10px;
-      padding: 0 12px;
-      z-index:1;
-    }
-
-    .cell{
-      height:52px;
-      border-radius:16px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:44px;
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
-      user-select:none;
-    }
-    .cell.mid{
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.18), 0 0 20px rgba(246,211,111,.10);
-    }
-
-    .controls{
-      margin-top:16px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:10px;
-    }
-    .btn{
-      border:0;
-      border-radius:16px;
-      padding:16px 22px;
-      font-weight:1000;
-      letter-spacing:.3px;
-      cursor:pointer;
-      color:#1a1200;
-      background: linear-gradient(180deg, rgba(246,211,111,1), rgba(231,179,70,1));
-      box-shadow: 0 10px 24px rgba(0,0,0,.35);
-      transition: transform .08s ease, filter .15s ease;
-      min-width: 240px;
-      display:flex; align-items:center; justify-content:center; gap:10px;
-    }
+    .controls{ margin-top:16px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .btn{ border:0; border-radius:16px; padding:16px 22px; font-weight:1000; letter-spacing:.3px; cursor:pointer; color:#1a1200; background: linear-gradient(180deg, rgba(246,211,111,1), rgba(231,179,70,1)); box-shadow: 0 12px 26px rgba(0,0,0,.40); transition: transform .08s ease, filter .15s ease, box-shadow .15s ease; min-width: 240px; display:flex; align-items:center; justify-content:center; gap:10px; }
     .btn:active{ transform: translateY(1px) scale(.99); }
-    .btn:disabled{ cursor:not-allowed; opacity:.65; filter: grayscale(.15); }
+    .btn:disabled{ cursor:not-allowed; opacity:.65; filter: grayscale(.15); box-shadow: none; }
+    .btn.glow{ box-shadow: 0 12px 32px rgba(246,211,111,.45), 0 0 0 2px rgba(246,211,111,.25), 0 0 45px rgba(246,211,111,.38); }
 
-    .toggles{
-      display:flex; gap:8px; flex-wrap:wrap; justify-content:center; opacity:.92;
-    }
-    .tinyBtn{
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: rgba(243,251,247,.92);
-      padding:6px 8px;
-      border-radius:10px;
-      cursor:pointer;
-      font-weight:900;
-      letter-spacing:.2px;
-      font-size:11px;
-      line-height:1;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-    }
-    .tinyBtn:hover{ filter: brightness(1.07); }
-    .tinyBtn[aria-pressed="true"]{ box-shadow: 0 0 0 2px rgba(246,211,111,.14); }
+    .toggles{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; opacity:.95; }
+    .tinyBtn{ border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(243,251,247,.92); padding:8px 10px; border-radius:12px; cursor:pointer; font-weight:900; letter-spacing:.2px; font-size:11px; line-height:1; display:inline-flex; align-items:center; gap:6px; transition: box-shadow .12s ease, filter .12s ease; }
+    .tinyBtn:hover{ filter: brightness(1.08); }
+    .tinyBtn[aria-pressed="true"], .tinyBtn.active{ box-shadow: 0 0 0 2px rgba(246,211,111,.18); color: var(--gold); }
 
-    .note{
-      width:100%;
-      text-align:center;
-      padding:10px 12px;
-      border-radius:16px;
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--muted);
-      font-size:14px;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      max-width: 720px;
-    }
+    .note{ width:100%; text-align:center; padding:10px 12px; border-radius:16px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); color:var(--muted); font-size:14px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; gap:10px; max-width: 780px; }
 
-    .toast{
-      height:0;
-      overflow:visible;
-      display:flex;
-      justify-content:center;
-      width:100%;
-      pointer-events:none;
-    }
-    .toast > div{
-      margin-top:6px;
-      background: rgba(0,0,0,.28);
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:14px;
-      padding:8px 12px;
-      font-weight:900;
-      letter-spacing:.2px;
-      font-size:12px;
-      color: rgba(243,251,247,.92);
-      opacity:0;
-      transform: translateY(-6px);
-      transition: opacity .18s ease, transform .18s ease;
-    }
+    .toast{ height:0; overflow:visible; display:flex; justify-content:center; width:100%; pointer-events:none; }
+    .toast > div{ margin-top:6px; background: rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.14); border-radius:14px; padding:8px 12px; font-weight:900; letter-spacing:.2px; font-size:12px; color: rgba(243,251,247,.92); opacity:0; transform: translateY(-6px); transition: opacity .18s ease, transform .18s ease; }
     .toast.show > div{ opacity:1; transform: translateY(0); }
 
-    /* POPUP */
-    .overlay{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:50;
-      padding:
-        calc(18px + env(safe-area-inset-top))
-        calc(18px + env(safe-area-inset-right))
-        calc(18px + env(safe-area-inset-bottom))
-        calc(18px + env(safe-area-inset-left));
-    }
-    .overlay.on{ display:flex; }
+    .history{ margin-top:12px; background: rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); border-radius:14px; padding:10px 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); max-height:200px; overflow:auto; }
+    .history h3{ margin:0 0 6px; font-size:14px; letter-spacing:.2px; color: var(--gold); }
+    .history ul{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:6px; }
+    .history li{ padding:8px 10px; background: rgba(0,0,0,.25); border-radius:10px; border:1px solid rgba(255,255,255,.08); font-weight:700; color:var(--text); display:flex; justify-content:space-between; gap:10px; }
+    .history time{ color: var(--muted); font-size:12px; }
 
-    .popup{
-      width:min(820px, 100%);
-      border-radius:28px;
-      border:1px solid rgba(255,255,255,.14);
-      background: linear-gradient(180deg, rgba(15,58,43,.95), rgba(10,43,32,.95));
-      box-shadow: 0 30px 90px rgba(0,0,0,.55);
-      padding:26px 22px;
-      text-align:center;
-      position:relative;
-      transform: scale(.88);
-      opacity:0;
-      animation: popIn 520ms ease-out forwards;
-      overflow:hidden;
-    }
-    @keyframes popIn{
-      0%{ transform: scale(.86); opacity:0; }
-      60%{ transform: scale(1.02); opacity:1; }
-      100%{ transform: scale(1); opacity:1; }
-    }
-    .burst{
-      position:absolute; inset:-70px -70px auto -70px;
-      height:280px;
-      background:
+    /* Popup */
+    .overlay{ position:fixed; inset:0; background: rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; padding:calc(18px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); }
+    .overlay.on{ display:flex; }
+    .popup{ width:min(820px, 100%); border-radius:28px; border:1px solid rgba(255,255,255,.14); background: linear-gradient(180deg, rgba(15,58,43,.95), rgba(10,43,32,.95)); box-shadow: 0 30px 90px rgba(0,0,0,.55); padding:26px 22px; text-align:center; position:relative; transform: scale(.88); opacity:0; animation: popIn 520ms ease-out forwards; overflow:hidden; }
+    @keyframes popIn{ 0%{ transform: scale(.86); opacity:0; } 60%{ transform: scale(1.02); opacity:1; } 100%{ transform: scale(1); opacity:1; }}
+    .burst{ position:absolute; inset:-70px -70px auto -70px; height:280px; background:
         radial-gradient(closest-side, rgba(246,211,111,.24), transparent 70%),
         radial-gradient(closest-side, rgba(43,210,107,.18), transparent 70%),
         radial-gradient(closest-side, rgba(210,43,43,.18), transparent 70%);
-      filter: blur(2px);
-      pointer-events:none;
-    }
-    .winText{
-      font-weight:1000;
-      letter-spacing:.6px;
-      line-height:1.05;
-      font-size: clamp(30px, 5.0vw, 66px);
-      margin: 12px 0 8px;
-      text-shadow: 0 10px 28px rgba(0,0,0,.35);
-    }
-    .winText .gold{
-      color: var(--gold);
-      text-shadow: 0 10px 34px rgba(246,211,111,.28);
-    }
-    .smallText{
-      margin: 10px 0 0;
-      color: rgba(243,251,247,.78);
-      font-size: 14px;
-    }
-    .closeRow{
-      margin-top:18px;
-      display:flex;
-      justify-content:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .closeBtn{
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.08);
-      color: var(--text);
-      padding:12px 14px;
-      border-radius:16px;
-      cursor:pointer;
-      font-weight:900;
-      min-width:180px;
-      transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
-    }
+      filter: blur(2px); pointer-events:none; }
+    .winText{ font-weight:1000; letter-spacing:.6px; line-height:1.05; font-size: clamp(30px, 5.0vw, 66px); margin: 12px 0 8px; text-shadow: 0 10px 28px rgba(0,0,0,.35); }
+    .winText .gold{ color: var(--gold); text-shadow: 0 10px 34px rgba(246,211,111,.28); }
+    .smallText{ margin: 10px 0 0; color: rgba(243,251,247,.78); font-size: 14px; }
+    .closeRow{ margin-top:18px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .closeBtn{ border:1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.08); color: var(--text); padding:12px 14px; border-radius:16px; cursor:pointer; font-weight:900; min-width:180px; transition: transform .08s ease, filter .15s ease, box-shadow .15s ease; }
     .closeBtn:hover{ filter: brightness(1.06); }
     .closeBtn:active{ transform: translateY(1px) scale(.99); }
+    .closeBtn.primary{ background: linear-gradient(180deg, rgba(246,211,111,1), rgba(231,179,70,1)); color:#1a1200; border: 1px solid rgba(246,211,111,.55); box-shadow: 0 10px 26px rgba(0,0,0,.40), 0 0 0 3px rgba(246,211,111,.14), 0 0 34px rgba(246,211,111,.22); }
+    .closeBtn.primary:hover{ box-shadow: 0 12px 30px rgba(0,0,0,.44), 0 0 0 4px rgba(246,211,111,.16), 0 0 40px rgba(246,211,111,.26); }
 
-    /* Highlight SPIN AGAIN */
-    .closeBtn.primary{
-      background: linear-gradient(180deg, rgba(246,211,111,1), rgba(231,179,70,1));
-      color:#1a1200;
-      border: 1px solid rgba(246,211,111,.55);
-      box-shadow:
-        0 10px 26px rgba(0,0,0,.40),
-        0 0 0 3px rgba(246,211,111,.14),
-        0 0 34px rgba(246,211,111,.22);
-    }
-    .closeBtn.primary:hover{
-      box-shadow:
-        0 12px 30px rgba(0,0,0,.44),
-        0 0 0 4px rgba(246,211,111,.16),
-        0 0 40px rgba(246,211,111,.26);
-    }
-
-    /* Mobile tune-ups */
-    @media (max-width: 520px){
+    /* Mobile */
+    @media (max-width: 560px){
       .machine{ padding:14px; border-radius:22px; }
       .panel{ padding:14px; border-radius:20px; }
       .reelsRow{ gap:10px; }
@@ -400,23 +138,23 @@
       .payline{ height:46px; border-radius:14px; }
       .btn{ width:100%; min-width: unset; }
       .closeBtn{ width:100%; min-width: unset; }
+      .history ul{ grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); }
     }
   </style>
 </head>
-
 <body>
-  <canvas id="confettiCanvas"></canvas>
+  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
   <div class="glowBurst" id="glowBurst" aria-hidden="true"></div>
-  <div class="snow" id="snow"></div>
+  <div class="snow" id="snow" aria-hidden="true"></div>
 
   <div class="wrap">
     <div class="machine" id="gameRoot" role="application" aria-label="Webb’s Jingle Jackpot slot machine">
       <div class="top">
+        <span class="badge" aria-live="polite">Holiday Edition • Safe for touchscreens</span>
         <div>
-          <h1>🎄 The Webb’s Jingle Jackpot 🎰</h1>
-          <div class="sub">Spin for your chance to WIN!</div>
+          <h1>🎄 Webb’s Jingle Jackpot 🎰</h1>
+          <div class="sub">Spin for cheer, track your streaks, and claim every prize before the sleigh departs.</div>
         </div>
-
         <div class="lights" aria-hidden="true">
           <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
           <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
@@ -425,6 +163,13 @@
       </div>
 
       <div class="panel">
+        <div class="statBar" aria-live="polite">
+          <div class="stat"><div class="label">Total Spins</div><div class="value" id="statSpins">0</div><small id="statSession"></small></div>
+          <div class="stat"><div class="label">Wins</div><div class="value" id="statWins">0</div><small id="statRate">Win rate 0%</small></div>
+          <div class="stat"><div class="label">Streak</div><div class="value" id="statStreak">0</div><small id="statBest">Best streak 0</small></div>
+          <div class="stat"><div class="label">Prizes claimed</div><div class="value" id="statPrizes">0 / 20</div><div class="meter" aria-hidden="true"><span id="prizeMeter"></span></div></div>
+        </div>
+
         <div class="reelsRow">
           <div class="reel" aria-label="Reel 1">
             <div class="payline" aria-hidden="true"></div>
@@ -434,7 +179,6 @@
               <div class="cell" id="r1b">❄️</div>
             </div>
           </div>
-
           <div class="reel" aria-label="Reel 2">
             <div class="payline" aria-hidden="true"></div>
             <div class="reelGrid">
@@ -443,7 +187,6 @@
               <div class="cell" id="r2b">⛄</div>
             </div>
           </div>
-
           <div class="reel" aria-label="Reel 3">
             <div class="payline" aria-hidden="true"></div>
             <div class="reelGrid">
@@ -455,35 +198,36 @@
         </div>
 
         <div class="controls">
-          <button class="btn" id="spinBtn">
-            <span>SPIN</span><span aria-hidden="true">🔔</span>
-          </button>
-
+          <button class="btn" id="spinBtn"><span>SPIN</span><span aria-hidden="true">🔔</span></button>
           <div class="toggles">
             <button class="tinyBtn" id="musicBtn" aria-pressed="true">🎵 Music</button>
             <button class="tinyBtn" id="sfxBtn" aria-pressed="true">🔊 SFX</button>
             <button class="tinyBtn" id="fsBtn" aria-pressed="false">⛶ Fullscreen</button>
+            <button class="tinyBtn" id="boostBtn" aria-pressed="false" title="Boost the next spin to be extra lucky">✨ Lucky Boost</button>
+            <button class="tinyBtn" id="autoBtn" aria-pressed="false" title="Queue three quick spins">🎲 Auto x3</button>
+            <button class="tinyBtn" id="resetBtn" aria-pressed="false" title="Reset prizes & stats">♻ Reset</button>
           </div>
 
           <div class="toast" id="toast"><div id="toastMsg">Try again!</div></div>
 
           <div class="note" aria-live="polite">
             <span style="font-size:18px">✨</span>
-            <span>Watch the middle row — that’s the winning line!</span>
+            <span id="noteText">Watch the middle row — that’s the winning line! Tip: press Space to spin.</span>
+          </div>
+
+          <div class="history" aria-live="polite">
+            <h3>Recent prizes</h3>
+            <ul id="historyList" aria-label="Last prizes"></ul>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- POPUP -->
   <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Popup">
     <div class="popup">
       <div class="burst" aria-hidden="true"></div>
-      <div class="winText" id="winText">
-        YOU WON<br/>
-        <span class="gold">PRIZE NUMBER 1</span>
-      </div>
+      <div class="winText" id="winText">YOU WON<br/><span class="gold">PRIZE NUMBER 1</span></div>
       <div class="smallText" id="smallText">Show this number to claim your prize 🎁</div>
       <div class="closeRow">
         <button class="closeBtn" id="closeBtn">CLOSE</button>
@@ -494,7 +238,7 @@
 
 <script>
 (() => {
-  const symbols = ["🎄","🎁","❄️","🔔","⭐","🧦","⛄","🦌","🍪","🎅"];
+  const symbols = ["🎄","🎁","❄️","🔔","⭐","🧦","⛄","🦌","🍪","🎅","🕯️","🧣","🍫","🧸"];
   const WIN_CHANCE = 0.70;
 
   const reels = [
@@ -503,36 +247,48 @@
     { t: document.getElementById("r3t"), m: document.getElementById("r3m"), b: document.getElementById("r3b") },
   ];
 
-  const gameRoot = document.getElementById("gameRoot");
   const spinBtn = document.getElementById("spinBtn");
   const overlay = document.getElementById("overlay");
   const winText = document.getElementById("winText");
   const smallText = document.getElementById("smallText");
   const closeBtn = document.getElementById("closeBtn");
   const spinAgainBtn = document.getElementById("spinAgainBtn");
+  const noteText = document.getElementById("noteText");
+  const historyList = document.getElementById("historyList");
 
   const musicBtn = document.getElementById("musicBtn");
   const sfxBtn = document.getElementById("sfxBtn");
   const fsBtn = document.getElementById("fsBtn");
+  const boostBtn = document.getElementById("boostBtn");
+  const autoBtn = document.getElementById("autoBtn");
+  const resetBtn = document.getElementById("resetBtn");
 
   const toast = document.getElementById("toast");
   const toastMsg = document.getElementById("toastMsg");
 
   const glowBurst = document.getElementById("glowBurst");
 
+  const statSpins = document.getElementById("statSpins");
+  const statWins = document.getElementById("statWins");
+  const statRate = document.getElementById("statRate");
+  const statStreak = document.getElementById("statStreak");
+  const statBest = document.getElementById("statBest");
+  const statPrizes = document.getElementById("statPrizes");
+  const statSession = document.getElementById("statSession");
+  const prizeMeter = document.getElementById("prizeMeter");
+
   let spinning = false;
   let musicOn = true;
   let sfxOn = true;
+  let luckyBoost = false;
+  let autoQueue = 0;
+  let sessionSpins = 0;
 
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-  // -----------------------
-  // Fullscreen (iPhone Safari often blocks; still works elsewhere)
-  // -----------------------
-  function isFullscreen(){
-    return !!(document.fullscreenElement || document.webkitFullscreenElement);
-  }
+  /* Fullscreen */
+  function isFullscreen(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
   async function toggleFullscreen(){
     try{
       if (isFullscreen()){
@@ -550,31 +306,33 @@
   document.addEventListener("fullscreenchange", () => fsBtn.setAttribute("aria-pressed", String(isFullscreen())));
   document.addEventListener("webkitfullscreenchange", () => fsBtn.setAttribute("aria-pressed", String(isFullscreen())));
 
-  // -----------------------
-  // Prize tracking (1–20, #3 always last) — persisted
-  // -----------------------
-  const STORE_KEY = "webb_jingle_jackpot_v3";
+  /* State */
+  const STORE_KEY = "webb_jingle_jackpot_v4";
   function freshState(){
     const remaining = [];
     for (let i=1;i<=20;i++) if (i !== 3) remaining.push(i);
-    return { remaining, threeWon: false, done: false };
+    return { remaining, threeWon: false, done: false, stats:{ spins:0, wins:0, streak:0, best:0 }, history: [] };
   }
   function loadState(){
     try{
-      const raw = localStorage.getItem(STORE_KEY);
+      const raw = localStorage.getItem(STORE_KEY) || localStorage.getItem("webb_jingle_jackpot_v3");
       if (!raw) return freshState();
       const s = JSON.parse(raw);
-      if (!s || !Array.isArray(s.remaining)) return freshState();
-      return {
-        remaining: s.remaining.filter(n => Number.isInteger(n) && n>=1 && n<=20 && n!==3),
-        threeWon: !!s.threeWon,
-        done: !!s.done
-      };
+      const base = freshState();
+      if (s && Array.isArray(s.remaining)) base.remaining = s.remaining.filter(n => Number.isInteger(n) && n>=1 && n<=20 && n!==3);
+      base.threeWon = !!s.threeWon;
+      base.done = !!s.done;
+      if (s.stats){
+        base.stats.spins = Number(s.stats.spins) || 0;
+        base.stats.wins = Number(s.stats.wins) || 0;
+        base.stats.streak = Number(s.stats.streak) || 0;
+        base.stats.best = Number(s.stats.best) || 0;
+      }
+      if (Array.isArray(s.history)) base.history = s.history.slice(-12);
+      return base;
     }catch(e){ return freshState(); }
   }
-  function saveState(){
-    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
-  }
+  function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
   let state = loadState();
 
   function awardPrize(){
@@ -597,48 +355,22 @@
     return { type:"done" };
   }
 
-  // -----------------------
-  // Web Audio (Christmas-y bells + sleigh-ish ticks)
-  // -----------------------
+  /* Web Audio */
   let audioCtx = null, master = null, musicGain = null, sfxGain = null;
   let musicTimer = null, sleighTimer = null, step = 0;
 
   function ensureAudio(){
     if (audioCtx) return;
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    master = audioCtx.createGain();
-    master.gain.value = 0.9;
-    master.connect(audioCtx.destination);
-
-    musicGain = audioCtx.createGain();
-    musicGain.gain.value = 0.10;
-    musicGain.connect(master);
-
-    sfxGain = audioCtx.createGain();
-    sfxGain.gain.value = 0.35;
-    sfxGain.connect(master);
+    master = audioCtx.createGain(); master.gain.value = 0.9; master.connect(audioCtx.destination);
+    musicGain = audioCtx.createGain(); musicGain.gain.value = 0.10; musicGain.connect(master);
+    sfxGain = audioCtx.createGain(); sfxGain.gain.value = 0.35; sfxGain.connect(master);
   }
-  async function resumeAudioIfNeeded(){
-    ensureAudio();
-    if (audioCtx.state !== "running") {
-      try { await audioCtx.resume(); } catch(e) {}
-    }
-  }
-  function setMusic(on){
-    musicOn = on;
-    musicBtn.setAttribute("aria-pressed", String(on));
-    if (!audioCtx) return;
-    musicGain.gain.setTargetAtTime(on ? 0.10 : 0.0001, audioCtx.currentTime, 0.03);
-  }
-  function setSfx(on){
-    sfxOn = on;
-    sfxBtn.setAttribute("aria-pressed", String(on));
-    if (!audioCtx) return;
-    sfxGain.gain.setTargetAtTime(on ? 0.35 : 0.0001, audioCtx.currentTime, 0.02);
-  }
-  musicBtn.addEventListener("click", async () => { await resumeAudioIfNeeded(); setMusic(!musicOn); });
-  sfxBtn.addEventListener("click", async () => { await resumeAudioIfNeeded(); setSfx(!sfxOn); });
+  async function resumeAudioIfNeeded(){ ensureAudio(); if (audioCtx.state !== "running") { try { await audioCtx.resume(); } catch(e) {} } }
+  function setMusic(on){ musicOn = on; musicBtn.setAttribute("aria-pressed", String(on)); if (!audioCtx) return; musicGain.gain.setTargetAtTime(on ? 0.10 : 0.0001, audioCtx.currentTime, 0.03); }
+  function setSfx(on){ sfxOn = on; sfxBtn.setAttribute("aria-pressed", String(on)); if (!audioCtx) return; sfxGain.gain.setTargetAtTime(on ? 0.35 : 0.0001, audioCtx.currentTime, 0.02); }
+  musicBtn.addEventListener("click", async () => { await resumeAudioIfNeeded(); setMusic(!musicOn); showToast(musicOn ? "Music on" : "Music muted"); });
+  sfxBtn.addEventListener("click", async () => { await resumeAudioIfNeeded(); setSfx(!sfxOn); showToast(sfxOn ? "SFX on" : "SFX muted"); });
 
   function bell(freq, time, dur, outGain){
     const o = audioCtx.createOscillator();
@@ -663,26 +395,12 @@
     const data = buf.getChannelData(0);
     for (let i=0;i<len;i++) data[i] = (Math.random()*2-1) * (1 - i/len);
 
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-
-    const hp = audioCtx.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.setValueAtTime(2500, time);
-
-    const bp = audioCtx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.setValueAtTime(5200, time);
-    bp.Q.setValueAtTime(0.9, time);
-
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.0001, time);
-    g.gain.exponentialRampToValueAtTime(0.12 * strength, time + 0.002);
-    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.03);
-
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const hp = audioCtx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(2500, time);
+    const bp = audioCtx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(5200, time); bp.Q.setValueAtTime(0.9, time);
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.0001, time); g.gain.exponentialRampToValueAtTime(0.12 * strength, time + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, time + 0.03);
     src.connect(hp); hp.connect(bp); bp.connect(g); g.connect(outGain);
-    src.start(time);
-    src.stop(time + 0.04);
+    src.start(time); src.stop(time + 0.04);
   }
 
   function startMusic(){
@@ -708,247 +426,104 @@
       for (let i=0;i<4;i++) sleighBellTick(t + i*0.03, musicGain, 0.35);
     }, 2000);
   }
-  function stopMusic(){
-    if (musicTimer){ clearInterval(musicTimer); musicTimer = null; }
-    if (sleighTimer){ clearInterval(sleighTimer); sleighTimer = null; }
-  }
+  function stopMusic(){ if (musicTimer){ clearInterval(musicTimer); musicTimer = null; } if (sleighTimer){ clearInterval(sleighTimer); sleighTimer = null; } }
 
   function spinWhoosh(){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
     for (let i=0;i<8;i++) sleighBellTick(t + i*0.02, sfxGain, 0.85);
-
     const noiseLen = audioCtx.sampleRate * 0.20;
     const buf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
     const data = buf.getChannelData(0);
     for (let i=0;i<data.length;i++) data[i] = (Math.random()*2-1);
-
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-
-    const bp = audioCtx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.setValueAtTime(700, t);
-    bp.frequency.exponentialRampToValueAtTime(1600, t + 0.14);
-    bp.Q.setValueAtTime(0.8, t);
-
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.20);
-
-    src.connect(bp); bp.connect(g); g.connect(sfxGain);
-    src.start(t);
-    src.stop(t + 0.22);
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const bp = audioCtx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(700, t); bp.frequency.exponentialRampToValueAtTime(1600, t + 0.14); bp.Q.setValueAtTime(0.8, t);
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.20);
+    src.connect(bp); bp.connect(g); g.connect(sfxGain); src.start(t); src.stop(t + 0.22);
   }
 
-  function reelStopChime(pitch){
-    if (!sfxOn || !audioCtx) return;
-    const t = audioCtx.currentTime;
-    bell(pitch, t, 0.16, sfxGain);
-    sleighBellTick(t + 0.01, sfxGain, 0.7);
-  }
+  function reelStopChime(pitch){ if (!sfxOn || !audioCtx) return; const t = audioCtx.currentTime; bell(pitch, t, 0.16, sfxGain); sleighBellTick(t + 0.01, sfxGain, 0.7); }
+  function winFanfare(){ if (!sfxOn || !audioCtx) return; const t = audioCtx.currentTime; const run = [659.25, 783.99, 987.77, 1046.5, 987.77, 1174.66]; run.forEach((f, i) => bell(f, t + i*0.08, 0.22, sfxGain)); for (let i=0;i<14;i++) sleighBellTick(t + 0.12 + i*0.03, sfxGain, 0.65); }
+  function loseThunk(){ if (!sfxOn || !audioCtx) return; const t = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.12); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16); o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t + 0.18); }
 
-  function winFanfare(){
-    if (!sfxOn || !audioCtx) return;
-    const t = audioCtx.currentTime;
-    const run = [659.25, 783.99, 987.77, 1046.5, 987.77, 1174.66];
-    run.forEach((f, i) => bell(f, t + i*0.08, 0.22, sfxGain));
-    for (let i=0;i<14;i++) sleighBellTick(t + 0.12 + i*0.03, sfxGain, 0.65);
-  }
-
-  function loseThunk(){
-    if (!sfxOn || !audioCtx) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = "sine";
-    o.frequency.setValueAtTime(180, t);
-    o.frequency.exponentialRampToValueAtTime(90, t + 0.12);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-    o.connect(g); g.connect(sfxGain);
-    o.start(t); o.stop(t + 0.18);
-  }
-
-  // -----------------------
-  // Confetti (canvas) — fixes mobile freezing
-  // -----------------------
+  /* Confetti */
   const confettiCanvas = document.getElementById("confettiCanvas");
   const ctx = confettiCanvas.getContext("2d", { alpha: true });
-
-  let cw = 0, ch = 0, dpr = 1;
-  function resizeCanvas(){
-    dpr = Math.min(window.devicePixelRatio || 1, 2); // cap for performance
-    cw = Math.floor(window.innerWidth);
-    ch = Math.floor(window.innerHeight);
-    confettiCanvas.width = Math.floor(cw * dpr);
-    confettiCanvas.height = Math.floor(ch * dpr);
-    confettiCanvas.style.width = cw + "px";
-    confettiCanvas.style.height = ch + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  window.addEventListener("resize", resizeCanvas, { passive: true });
-  window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 120), { passive: true });
-  resizeCanvas();
-
-  let particles = [];
-  let confettiRaf = null;
-  let confettiEndAt = 0;
-
-  const confettiColors = ["#f6d36f","#2bd26b","#d22b2b","#ffffff","#9be7ff","#ff9bd6"];
-
-  function makeParticle(){
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 6 + Math.random() * 10;
-    const size = 6 + Math.random() * 8;
-    const shapeType = Math.random() < 0.25 ? "circle" : "rect";
-    return {
-      x: cw * 0.5 + (Math.random()*40 - 20),
-      y: ch * 0.42 + (Math.random()*30 - 15),
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - (6 + Math.random()*6),
-      r: size,
-      w: size * (shapeType === "circle" ? 1 : (0.8 + Math.random()*1.2)),
-      h: size * (shapeType === "circle" ? 1 : (0.9 + Math.random()*2.0)),
-      rot: Math.random() * Math.PI,
-      vr: (Math.random()*0.28 - 0.14),
-      color: confettiColors[Math.floor(Math.random()*confettiColors.length)],
-      shape: shapeType,
-      life: 1.0
-    };
+  let cw = 0, ch = 0, dpr = 1; let particles = []; let confettiRaf = null; let confettiEndAt = 0;
+  const confettiColors = ["#f6d36f","#2bd26b","#d22b2b","#ffffff","#9be7ff","#ff9bd6","#ffe9a3"];
+  function resizeCanvas(){ dpr = Math.min(window.devicePixelRatio || 1, 2); cw = Math.floor(window.innerWidth); ch = Math.floor(window.innerHeight); confettiCanvas.width = Math.floor(cw * dpr); confettiCanvas.height = Math.floor(ch * dpr); confettiCanvas.style.width = cw + "px"; confettiCanvas.style.height = ch + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  window.addEventListener("resize", resizeCanvas, { passive: true }); window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 120), { passive: true }); resizeCanvas();
+  function makeParticle(){ const angle = Math.random() * Math.PI * 2; const speed = 6 + Math.random() * 10; const size = 6 + Math.random() * 8; const shapeType = Math.random() < 0.25 ? "circle" : "rect"; return { x: cw * 0.5 + (Math.random()*40 - 20), y: ch * 0.42 + (Math.random()*30 - 15), vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - (6 + Math.random()*6), r: size, w: size * (shapeType === "circle" ? 1 : (0.8 + Math.random()*1.2)), h: size * (shapeType === "circle" ? 1 : (0.9 + Math.random()*2.0)), rot: Math.random() * Math.PI, vr: (Math.random()*0.28 - 0.14), color: confettiColors[Math.floor(Math.random()*confettiColors.length)], shape: shapeType, life: 1.0 }; }
+  function startConfetti(durationMs = 1600){ particles = []; const count = Math.max(100, Math.min(180, Math.floor(cw / 5))); for (let i=0;i<count;i++) particles.push(makeParticle()); glowBurst.classList.remove("on"); void glowBurst.offsetWidth; glowBurst.classList.add("on"); confettiEndAt = performance.now() + durationMs; if (confettiRaf) cancelAnimationFrame(confettiRaf); confettiRaf = requestAnimationFrame(tickConfetti); }
+  function tickConfetti(now){ ctx.clearRect(0, 0, cw, ch); const gravity = 0.55; const drag = 0.985; for (let i = particles.length - 1; i >= 0; i--){ const p = particles[i]; p.vx *= drag; p.vy = p.vy * drag + gravity; p.x += p.vx; p.y += p.vy; p.rot += p.vr; const timeLeft = Math.max(0, confettiEndAt - now); p.life = Math.min(1, timeLeft / 450); ctx.save(); ctx.globalAlpha = 0.95 * p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color; if (p.shape === "circle"){ ctx.beginPath(); ctx.arc(0, 0, p.r * 0.5, 0, Math.PI * 2); ctx.fill(); } else { ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); } ctx.restore(); if (p.y > ch + 60 || p.x < -60 || p.x > cw + 60) particles.splice(i, 1); }
+    if (now < confettiEndAt || particles.length > 0){ confettiRaf = requestAnimationFrame(tickConfetti); } else { ctx.clearRect(0, 0, cw, ch); confettiRaf = null; }
   }
 
-  function startConfetti(durationMs = 1400){
-    // reset
-    particles = [];
-    const count = Math.max(90, Math.min(160, Math.floor(cw / 6))); // scale a bit with screen width
-    for (let i=0;i<count;i++) particles.push(makeParticle());
+  /* Reels */
+  function setReel(i, top, mid, bot){ reels[i].t.textContent = top; reels[i].m.textContent = mid; reels[i].b.textContent = bot; }
+  function randomizeReel(i){ setReel(i, pick(symbols), pick(symbols), pick(symbols)); }
+  function spinReel(i, durationMs, finalMidSymbol, onStop){ return new Promise(resolve => { const interval = 60; let elapsed = 0; const timer = setInterval(() => { elapsed += interval; randomizeReel(i); if (elapsed >= durationMs){ clearInterval(timer); setReel(i, pick(symbols), finalMidSymbol, pick(symbols)); onStop && onStop(); resolve(); } }, interval); }); }
 
-    // glow burst (cheap, CSS)
-    glowBurst.classList.remove("on");
-    void glowBurst.offsetWidth;
-    glowBurst.classList.add("on");
+  /* UI helpers */
+  function openPopupBig(linesHtml, sub){ winText.innerHTML = linesHtml; smallText.textContent = sub || ""; overlay.classList.add("on"); }
+  function closePopup(){ overlay.classList.remove("on"); }
+  function showToast(msg){ toastMsg.textContent = msg; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 1100); }
+  function allDoneMessage(){ openPopupBig(`THANK YOU FOR PLAYING<br/><span class="gold">MERRY CHRISTMAS</span>`, "All prizes have been claimed 🎄"); spinBtn.disabled = true; spinBtn.classList.remove("glow"); }
 
-    confettiEndAt = performance.now() + durationMs;
-
-    if (confettiRaf) cancelAnimationFrame(confettiRaf);
-    confettiRaf = requestAnimationFrame(tickConfetti);
+  function updateStats(win){
+    state.stats.spins++; sessionSpins++;
+    if (win){ state.stats.wins++; state.stats.streak++; state.stats.best = Math.max(state.stats.best, state.stats.streak); }
+    else { state.stats.streak = 0; }
+    saveState();
+    renderStats();
   }
 
-  function tickConfetti(now){
-    ctx.clearRect(0, 0, cw, ch);
+  function renderStats(){
+    statSpins.textContent = state.stats.spins;
+    statWins.textContent = state.stats.wins;
+    statStreak.textContent = state.stats.streak;
+    statBest.textContent = `Best streak ${state.stats.best}`;
+    const rate = state.stats.spins ? Math.round((state.stats.wins / state.stats.spins) * 100) : 0;
+    statRate.textContent = `Win rate ${rate}%`;
+    statPrizes.textContent = `${20 - state.remaining.length - (state.threeWon ? 1 : 0)} / 20`;
+    prizeMeter.style.width = `${Math.min(100, ((20 - state.remaining.length - (state.threeWon ? 1 : 0)) / 20) * 100)}%`;
+    statSession.textContent = sessionSpins ? `Session spins ${sessionSpins}` : "";
+    boostBtn.setAttribute("aria-pressed", String(luckyBoost));
+    boostBtn.classList.toggle("active", luckyBoost);
+    autoBtn.setAttribute("aria-pressed", String(autoQueue > 0));
+    autoBtn.classList.toggle("active", autoQueue > 0);
+    resetBtn.classList.toggle("active", false);
+    renderHistory();
+  }
 
-    // physics
-    const gravity = 0.55;
-    const drag = 0.985;
-
-    for (let i = particles.length - 1; i >= 0; i--){
-      const p = particles[i];
-      p.vx *= drag;
-      p.vy = p.vy * drag + gravity;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rot += p.vr;
-
-      // fade out near end
-      const timeLeft = Math.max(0, confettiEndAt - now);
-      p.life = Math.min(1, timeLeft / 450);
-
-      // draw
-      ctx.save();
-      ctx.globalAlpha = 0.95 * p.life;
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.fillStyle = p.color;
-
-      if (p.shape === "circle"){
-        ctx.beginPath();
-        ctx.arc(0, 0, p.r * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
-      }
-      ctx.restore();
-
-      // cull offscreen
-      if (p.y > ch + 60 || p.x < -60 || p.x > cw + 60) {
-        particles.splice(i, 1);
-      }
+  function renderHistory(){
+    historyList.innerHTML = "";
+    if (!state.history.length){
+      const li = document.createElement("li");
+      li.textContent = "No prizes yet — spin to start your list.";
+      historyList.appendChild(li);
+      return;
     }
-
-    if (now < confettiEndAt || particles.length > 0){
-      confettiRaf = requestAnimationFrame(tickConfetti);
-    } else {
-      ctx.clearRect(0, 0, cw, ch);
-      confettiRaf = null;
-    }
-  }
-
-  // -----------------------
-  // Reels
-  // -----------------------
-  function setReel(i, top, mid, bot){
-    reels[i].t.textContent = top;
-    reels[i].m.textContent = mid;
-    reels[i].b.textContent = bot;
-  }
-  function randomizeReel(i){
-    setReel(i, pick(symbols), pick(symbols), pick(symbols));
-  }
-  function spinReel(i, durationMs, finalMidSymbol, onStop){
-    return new Promise(resolve => {
-      const interval = 60;
-      let elapsed = 0;
-      const timer = setInterval(() => {
-        elapsed += interval;
-        randomizeReel(i);
-        if (elapsed >= durationMs){
-          clearInterval(timer);
-          setReel(i, pick(symbols), finalMidSymbol, pick(symbols));
-          onStop && onStop();
-          resolve();
-        }
-      }, interval);
+    state.history.slice().reverse().forEach(entry => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span>Prize #${entry.number}${entry.last ? " • Final" : ""}</span><time>${entry.time}</time>`;
+      historyList.appendChild(li);
     });
   }
 
-  // -----------------------
-  // UI helpers
-  // -----------------------
-  function openPopupBig(linesHtml, sub){
-    winText.innerHTML = linesHtml;
-    smallText.textContent = sub || "";
-    overlay.classList.add("on");
-  }
-  function closePopup(){ overlay.classList.remove("on"); }
-
-  function showToast(msg){
-    toastMsg.textContent = msg;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 900);
+  function pushHistory(prize){
+    const now = new Date();
+    const label = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    state.history.push({ number: prize.number, last: prize.last, time: label });
+    state.history = state.history.slice(-12);
+    saveState();
   }
 
-  function allDoneMessage(){
-    openPopupBig(
-      `THANK YOU FOR PLAYING<br/><span class="gold">MERRY CHRISTMAS</span>`,
-      "All prizes have been claimed 🎄"
-    );
-    spinBtn.disabled = true;
-  }
+  function updateNote(message){ noteText.textContent = message; }
 
-  // -----------------------
-  // Spin
-  // -----------------------
+  /* Spin */
   async function spin(){
-    if (spinning) return;
-
-    if (state.done){
-      allDoneMessage();
-      return;
-    }
-
+    if (spinning || state.done) return;
     await resumeAudioIfNeeded();
     startMusic();
     setMusic(musicOn);
@@ -956,13 +531,15 @@
 
     spinning = true;
     spinBtn.disabled = true;
+    spinBtn.classList.add("glow");
 
     spinWhoosh();
 
-    const isWin = Math.random() < WIN_CHANCE;
+    const willWin = Math.random() < (luckyBoost ? 0.95 : WIN_CHANCE);
+    luckyBoost = false;
 
     let finals;
-    if (isWin){
+    if (willWin){
       const sym = pick(symbols);
       finals = [sym, sym, sym];
     } else {
@@ -979,39 +556,32 @@
       spinReel(2, 1500, finals[2], () => reelStopChime(1046.5)),
     ]);
 
-    await sleep(550);
+    await sleep(520);
 
-    if (isWin){
+    if (willWin){
+      updateStats(true);
       const result = awardPrize();
-
-      // fast mobile-safe confetti
-      startConfetti(1450);
+      startConfetti(1550);
       winFanfare();
-
       if (result.type === "prize"){
-        openPopupBig(
-          `YOU WON<br/><span class="gold">PRIZE NUMBER ${result.number}</span>`,
-          "Show this number to claim your prize 🎁"
-        );
-
-        // If last prize (#3) was assigned, lock machine immediately.
-        if (result.last){
-          state.done = true;
-          saveState();
-          spinBtn.disabled = true;
-        } else {
-          spinBtn.disabled = false;
-        }
-      } else {
-        allDoneMessage();
-      }
+        pushHistory(result);
+        openPopupBig(`YOU WON<br/><span class="gold">PRIZE NUMBER ${result.number}</span>`, "Show this number to claim your prize 🎁");
+        updateNote(result.last ? "Prize #3 has been secured — the sleigh is closed." : "Prizes remaining: " + state.remaining.length);
+        if (result.last){ state.done = true; saveState(); spinBtn.disabled = true; spinBtn.classList.remove("glow"); }
+        else { spinBtn.disabled = false; }
+      } else { allDoneMessage(); }
     } else {
+      updateStats(false);
       loseThunk();
       showToast("So close! Spin again 🎅");
       spinBtn.disabled = false;
+      updateNote("Need extra luck? Tap Lucky Boost before spinning.");
     }
 
     spinning = false;
+    renderStats();
+
+    if (autoQueue > 0 && !state.done){ autoQueue--; await sleep(400); spin(); }
   }
 
   spinBtn.addEventListener("click", spin);
@@ -1019,35 +589,49 @@
   closeBtn.addEventListener("click", closePopup);
   spinAgainBtn.addEventListener("click", () => { closePopup(); spin(); });
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closePopup(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePopup(); });
-
-  // Snow
-  const snow = document.getElementById("snow");
-  function makeSnow(){
-    const count = 52;
-    for (let i=0;i<count;i++){
-      const f = document.createElement("div");
-      f.className="flake";
-      const size = 3 + Math.random()*7;
-      f.style.width = size+"px";
-      f.style.height = size+"px";
-      f.style.left = (Math.random()*100)+"vw";
-      f.style.opacity = (0.30 + Math.random()*0.70).toFixed(2);
-      const dur = 6 + Math.random()*10;
-      f.style.animationDuration = dur+"s";
-      f.style.animationDelay = (-Math.random()*dur)+"s";
-      f.style.setProperty("--drift", ((Math.random()*2-1)*70) + "px");
-      snow.appendChild(f);
-    }
-  }
-  makeSnow();
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopMusic();
-    else if (audioCtx && audioCtx.state === "running") startMusic();
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closePopup();
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); spin(); }
+    if (e.key.toLowerCase() === "m") musicBtn.click();
+    if (e.key.toLowerCase() === "s") sfxBtn.click();
+    if (e.key.toLowerCase() === "f") fsBtn.click();
   });
 
-  if (state.done) spinBtn.disabled = true;
+  boostBtn.addEventListener("click", () => {
+    luckyBoost = !luckyBoost;
+    renderStats();
+    showToast(luckyBoost ? "Next spin boosted!" : "Boost cancelled");
+  });
+
+  autoBtn.addEventListener("click", async () => {
+    if (state.done) return;
+    autoQueue = 3;
+    renderStats();
+    showToast("Auto x3 queued");
+    if (!spinning) spin();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    state = freshState();
+    sessionSpins = 0;
+    luckyBoost = false;
+    autoQueue = 0;
+    saveState();
+    renderStats();
+    spinBtn.disabled = false;
+    spinBtn.classList.add("glow");
+    showToast("Machine reset");
+  });
+
+  /* Snow */
+  const snow = document.getElementById("snow");
+  function makeSnow(){ const count = 64; for (let i=0;i<count;i++){ const f = document.createElement("div"); f.className="flake"; const size = 3 + Math.random()*7; f.style.width = size+"px"; f.style.height = size+"px"; f.style.left = (Math.random()*100)+"vw"; f.style.opacity = (0.30 + Math.random()*0.70).toFixed(2); const dur = 6 + Math.random()*10; f.style.animationDuration = dur+"s"; f.style.animationDelay = (-Math.random()*dur)+"s"; f.style.setProperty("--drift", ((Math.random()*2-1)*70) + "px"); snow.appendChild(f); } }
+  makeSnow();
+
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stopMusic(); else if (audioCtx && audioCtx.state === "running") startMusic(); });
+
+  if (state.done) spinBtn.disabled = true; else spinBtn.classList.add("glow");
+  renderStats();
 })();
 </script>
 </body>
