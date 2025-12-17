@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#061b14" />
+
+  <!-- iOS “app-like” mode (works best when you Add to Home Screen) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Jingle Jackpot" />
+
   <title>Webb’s Jingle Jackpot</title>
+
   <style>
     :root{
       --bg1:#061b14;
@@ -24,6 +32,8 @@
         radial-gradient(1200px 800px at 85% 30%, rgba(210,43,43,.12), transparent 60%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     /* Snow */
@@ -42,9 +52,13 @@
 
     .wrap{
       position:relative; z-index:1;
-      min-height:100%;
+      min-height:100svh;
       display:flex; align-items:center; justify-content:center;
-      padding:28px 14px;
+      padding:
+        calc(18px + env(safe-area-inset-top))
+        calc(14px + env(safe-area-inset-right))
+        calc(24px + env(safe-area-inset-bottom))
+        calc(14px + env(safe-area-inset-left));
     }
 
     .machine{
@@ -57,7 +71,6 @@
       padding:22px;
     }
 
-    /* --- TOP HEADER (CENTERED LIGHTS) --- */
     .top{
       display:flex;
       flex-direction:column;
@@ -65,8 +78,8 @@
       gap:12px;
       text-align:center;
     }
-    h1{margin:0; font-size: clamp(24px, 3.0vw, 38px); letter-spacing:.2px;}
-    .sub{ margin:0; color:var(--muted); font-size:15px; line-height:1.35; }
+    h1{margin:0; font-size: clamp(22px, 3.0vw, 38px); letter-spacing:.2px;}
+    .sub{ margin:0; color:var(--muted); font-size:14px; line-height:1.35; }
 
     .lights{
       display:flex; gap:10px; align-items:center; justify-content:center;
@@ -94,17 +107,25 @@
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
     }
 
-    .reelsRow{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+    .reelsRow{
+      display:flex;
+      gap:14px;
+      justify-content:center;
+      flex-wrap:wrap;
+      align-items:stretch;
+    }
 
     .reel{
-      width: clamp(130px, 20vw, 180px);
-      height: 198px;
+      width: clamp(120px, 26vw, 180px);
+      height: clamp(168px, 26vh, 198px);
       border-radius:22px;
       background: rgba(0,0,0,.22);
       border:1px solid rgba(255,255,255,.12);
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 10px 25px rgba(0,0,0,.35);
       position:relative;
       overflow:hidden;
+      flex: 1 1 auto;
+      max-width: 220px;
     }
     .reel::before, .reel::after{
       content:"";
@@ -175,9 +196,8 @@
     .btn:active{ transform: translateY(1px) scale(.99); }
     .btn:disabled{ cursor:not-allowed; opacity:.65; filter: grayscale(.15); }
 
-    /* MUCH SMALLER TOGGLES */
     .toggles{
-      display:flex; gap:8px; flex-wrap:wrap; justify-content:center; opacity:.9;
+      display:flex; gap:8px; flex-wrap:wrap; justify-content:center; opacity:.92;
     }
     .tinyBtn{
       border:1px solid rgba(255,255,255,.14);
@@ -190,7 +210,6 @@
       letter-spacing:.2px;
       font-size:11px;
       line-height:1;
-      min-width: unset;
       display:inline-flex;
       align-items:center;
       gap:6px;
@@ -214,6 +233,7 @@
       gap:10px;
       max-width: 720px;
     }
+
     .toast{
       height:0;
       overflow:visible;
@@ -246,7 +266,11 @@
       align-items:center;
       justify-content:center;
       z-index:50;
-      padding:18px;
+      padding:
+        calc(18px + env(safe-area-inset-top))
+        calc(18px + env(safe-area-inset-right))
+        calc(18px + env(safe-area-inset-bottom))
+        calc(18px + env(safe-area-inset-left));
     }
     .overlay.on{ display:flex; }
 
@@ -283,7 +307,7 @@
       font-weight:1000;
       letter-spacing:.6px;
       line-height:1.05;
-      font-size: clamp(34px, 4.6vw, 66px);
+      font-size: clamp(30px, 5.0vw, 66px);
       margin: 12px 0 8px;
       text-shadow: 0 10px 28px rgba(0,0,0,.35);
     }
@@ -355,9 +379,17 @@
       100%{ opacity:0; transform: translate(-50%,-50%) scale(1.04); }
     }
 
+    /* Mobile tune-ups */
     @media (max-width: 520px){
-      .btn{ width:100%; }
-      .closeBtn{ width:100%; }
+      .machine{ padding:14px; border-radius:22px; }
+      .panel{ padding:14px; border-radius:20px; }
+      .reelsRow{ gap:10px; }
+      .reel{ width:auto; flex: 1 1 30%; max-width: 150px; height: 172px; border-radius:18px; }
+      .reelGrid{ inset: 12px 0 12px 0; gap:8px; padding: 0 10px; }
+      .cell{ height:46px; font-size:38px; border-radius:14px; }
+      .payline{ height:46px; border-radius:14px; }
+      .btn{ width:100%; min-width: unset; }
+      .closeBtn{ width:100%; min-width: unset; }
     }
   </style>
 </head>
@@ -366,7 +398,7 @@
   <div class="snow" id="snow"></div>
 
   <div class="wrap">
-    <div class="machine" role="application" aria-label="Webb’s Jingle Jackpot slot machine">
+    <div class="machine" id="gameRoot" role="application" aria-label="Webb’s Jingle Jackpot slot machine">
       <div class="top">
         <div>
           <h1>🎄 Webb’s Jingle Jackpot 🎰</h1>
@@ -418,6 +450,7 @@
           <div class="toggles">
             <button class="tinyBtn" id="musicBtn" aria-pressed="true">🎵 Music</button>
             <button class="tinyBtn" id="sfxBtn" aria-pressed="true">🔊 SFX</button>
+            <button class="tinyBtn" id="fsBtn" aria-pressed="false">⛶ Fullscreen</button>
           </div>
 
           <div class="toast" id="toast"><div id="toastMsg">Try again!</div></div>
@@ -474,6 +507,7 @@
     { t: document.getElementById("r3t"), m: document.getElementById("r3m"), b: document.getElementById("r3b") },
   ];
 
+  const gameRoot = document.getElementById("gameRoot");
   const spinBtn = document.getElementById("spinBtn");
   const overlay = document.getElementById("overlay");
   const winText = document.getElementById("winText");
@@ -485,6 +519,7 @@
 
   const musicBtn = document.getElementById("musicBtn");
   const sfxBtn = document.getElementById("sfxBtn");
+  const fsBtn = document.getElementById("fsBtn");
 
   const toast = document.getElementById("toast");
   const toastMsg = document.getElementById("toastMsg");
@@ -497,17 +532,37 @@
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   // -----------------------
-  // PRIZE TRACKING (1–20, with #3 always last)
-  // Persists via localStorage.
+  // Fullscreen button (works on many devices; iPhone Safari often blocks it)
   // -----------------------
-  const STORE_KEY = "webb_jingle_jackpot_v1";
+  function isFullscreen(){
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+  async function toggleFullscreen(){
+    try{
+      if (isFullscreen()){
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } else {
+        const el = document.documentElement;
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }
+    }catch(e){}
+    fsBtn.setAttribute("aria-pressed", String(isFullscreen()));
+  }
+  fsBtn.addEventListener("click", toggleFullscreen);
+  document.addEventListener("fullscreenchange", () => fsBtn.setAttribute("aria-pressed", String(isFullscreen())));
+  document.addEventListener("webkitfullscreenchange", () => fsBtn.setAttribute("aria-pressed", String(isFullscreen())));
 
+  // -----------------------
+  // Prize tracking (1–20, #3 always last) — persisted in localStorage
+  // -----------------------
+  const STORE_KEY = "webb_jingle_jackpot_v2";
   function freshState(){
     const remaining = [];
     for (let i=1;i<=20;i++) if (i !== 3) remaining.push(i);
     return { remaining, threeWon: false, done: false };
   }
-
   function loadState(){
     try{
       const raw = localStorage.getItem(STORE_KEY);
@@ -519,44 +574,35 @@
         threeWon: !!s.threeWon,
         done: !!s.done
       };
-    }catch(e){
-      return freshState();
-    }
+    }catch(e){ return freshState(); }
   }
-
   function saveState(){
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
   }
-
   let state = loadState();
 
   function awardPrize(){
     if (state.done) return { type:"done" };
-
-    // still have non-3 prizes?
     if (state.remaining.length > 0){
       const idx = Math.floor(Math.random() * state.remaining.length);
       const prize = state.remaining[idx];
       state.remaining.splice(idx, 1);
       saveState();
-      return { type:"prize", number: prize };
+      return { type:"prize", number: prize, last: false };
     }
-
-    // only #3 remains
     if (!state.threeWon){
       state.threeWon = true;
       state.done = true;
       saveState();
       return { type:"prize", number: 3, last: true };
     }
-
     state.done = true;
     saveState();
     return { type:"done" };
   }
 
   // -----------------------
-  // CHRISTMAS-Y AUDIO (Web Audio)
+  // Audio (Web Audio) — starts on first user interaction
   // -----------------------
   let audioCtx = null, master = null, musicGain = null, sfxGain = null;
   let musicTimer = null, sleighTimer = null, step = 0;
@@ -577,7 +623,6 @@
     sfxGain.gain.value = 0.35;
     sfxGain.connect(master);
   }
-
   async function resumeAudioIfNeeded(){
     ensureAudio();
     if (audioCtx.state !== "running") {
@@ -591,44 +636,31 @@
     if (!audioCtx) return;
     musicGain.gain.setTargetAtTime(on ? 0.10 : 0.0001, audioCtx.currentTime, 0.03);
   }
-
   function setSfx(on){
     sfxOn = on;
     sfxBtn.setAttribute("aria-pressed", String(on));
     if (!audioCtx) return;
     sfxGain.gain.setTargetAtTime(on ? 0.35 : 0.0001, audioCtx.currentTime, 0.02);
   }
-
-  musicBtn.addEventListener("click", async () => {
-    await resumeAudioIfNeeded();
-    setMusic(!musicOn);
-  });
-  sfxBtn.addEventListener("click", async () => {
-    await resumeAudioIfNeeded();
-    setSfx(!sfxOn);
-  });
+  musicBtn.addEventListener("click", async () => { await resumeAudioIfNeeded(); setMusic(!musicOn); });
+  sfxBtn.addEventListener("click", async () => { await resumeAudioIfNeeded(); setSfx(!sfxOn); });
 
   function bell(freq, time, dur, outGain){
     const o = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     const f = audioCtx.createBiquadFilter();
-
     o.type = "triangle";
     o.frequency.setValueAtTime(freq, time);
-
     f.type = "bandpass";
     f.frequency.setValueAtTime(1400, time);
     f.Q.setValueAtTime(1.2, time);
-
     g.gain.setValueAtTime(0.0001, time);
     g.gain.exponentialRampToValueAtTime(0.22, time + 0.008);
     g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-
     o.connect(f); f.connect(g); g.connect(outGain);
     o.start(time);
     o.stop(time + dur + 0.02);
   }
-
   function sleighBellTick(time, outGain, strength=1){
     const len = Math.floor(audioCtx.sampleRate * 0.03);
     const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
@@ -659,22 +691,17 @@
 
   function startMusic(){
     if (!audioCtx || musicTimer) return;
-
-    // Festive, original major palette groove
     const bars = [
       [523.25, 659.25, 783.99, 659.25, 880.00, 659.25, 783.99, 659.25],
       [698.46, 587.33, 784.00, 587.33, 880.00, 587.33, 784.00, 587.33],
       [783.99, 659.25, 987.77, 659.25, 1046.5, 659.25, 987.77, 659.25],
       [523.25, 659.25, 783.99, 659.25, 880.00, 659.25, 783.99, 659.25],
     ];
-
-    const stepMs = 250; // 120 bpm 8th notes
-
+    const stepMs = 250;
     musicTimer = setInterval(() => {
       const t = audioCtx.currentTime + 0.02;
       const bar = bars[Math.floor(step / 8) % bars.length];
       const note = bar[step % 8];
-
       bell(note, t, 0.20, musicGain);
       if ((step % 2) === 1) sleighBellTick(t, musicGain, 0.55);
       step++;
@@ -682,12 +709,9 @@
 
     sleighTimer = setInterval(() => {
       const t = audioCtx.currentTime + 0.02;
-      for (let i=0;i<4;i++){
-        sleighBellTick(t + i*0.03, musicGain, 0.35);
-      }
+      for (let i=0;i<4;i++) sleighBellTick(t + i*0.03, musicGain, 0.35);
     }, 2000);
   }
-
   function stopMusic(){
     if (musicTimer){ clearInterval(musicTimer); musicTimer = null; }
     if (sleighTimer){ clearInterval(sleighTimer); sleighTimer = null; }
@@ -696,10 +720,7 @@
   function spinWhoosh(){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
-
-    for (let i=0;i<8;i++){
-      sleighBellTick(t + i*0.02, sfxGain, 0.85);
-    }
+    for (let i=0;i<8;i++) sleighBellTick(t + i*0.02, sfxGain, 0.85);
 
     const noiseLen = audioCtx.sampleRate * 0.20;
     const buf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
@@ -724,47 +745,36 @@
     src.start(t);
     src.stop(t + 0.22);
   }
-
   function reelStopChime(pitch){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
     bell(pitch, t, 0.16, sfxGain);
     sleighBellTick(t + 0.01, sfxGain, 0.7);
   }
-
   function winFanfare(){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
-
     const run = [659.25, 783.99, 987.77, 1046.5, 987.77, 1174.66];
     run.forEach((f, i) => bell(f, t + i*0.08, 0.22, sfxGain));
-
-    for (let i=0;i<14;i++){
-      sleighBellTick(t + 0.12 + i*0.03, sfxGain, 0.65);
-    }
+    for (let i=0;i<14;i++) sleighBellTick(t + 0.12 + i*0.03, sfxGain, 0.65);
   }
-
   function loseThunk(){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
-
     const o = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     o.type = "sine";
     o.frequency.setValueAtTime(180, t);
     o.frequency.exponentialRampToValueAtTime(90, t + 0.12);
-
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-
     o.connect(g); g.connect(sfxGain);
-    o.start(t);
-    o.stop(t + 0.18);
+    o.start(t); o.stop(t + 0.18);
   }
 
   // -----------------------
-  // REELS
+  // Reels
   // -----------------------
   function setReel(i, top, mid, bot){
     reels[i].t.textContent = top;
@@ -784,7 +794,7 @@
         if (elapsed >= durationMs){
           clearInterval(timer);
           setReel(i, pick(symbols), finalMidSymbol, pick(symbols));
-          if (onStop) onStop();
+          onStop && onStop();
           resolve();
         }
       }, interval);
@@ -792,7 +802,7 @@
   }
 
   // -----------------------
-  // EFFECTS + POPUP
+  // Effects / UI
   // -----------------------
   function dramaticConfetti(){
     sparkleLayer.innerHTML = "";
@@ -806,9 +816,7 @@
     const shapes = ["square","circle","ribbon"];
     const count = 160;
 
-    const originX = 50;
-    const originY = 45;
-
+    const originX = 50, originY = 45;
     for (let i = 0; i < count; i++){
       const s = document.createElement("div");
       s.className = "spark";
@@ -854,10 +862,12 @@
       `THANK YOU FOR PLAYING<br/><span class="gold">MERRY CHRISTMAS</span>`,
       "All prizes have been claimed 🎄"
     );
-    // lock the machine
     spinBtn.disabled = true;
   }
 
+  // -----------------------
+  // Spin
+  // -----------------------
   async function spin(){
     if (spinning) return;
 
@@ -866,7 +876,6 @@
       return;
     }
 
-    // WebAudio must start from a user gesture; SPIN counts.
     await resumeAudioIfNeeded();
     startMusic();
     setMusic(musicOn);
@@ -879,16 +888,13 @@
 
     const isWin = Math.random() < WIN_CHANCE;
 
-    // choose finals
     let finals;
     if (isWin){
       const sym = pick(symbols);
       finals = [sym, sym, sym];
     } else {
-      // ensure not all match
       const a = pick(symbols);
-      let b = pick(symbols);
-      let c = pick(symbols);
+      let b = pick(symbols), c = pick(symbols);
       while (b === a) b = pick(symbols);
       while (c === a || c === b) c = pick(symbols);
       finals = [a, b, c];
@@ -904,43 +910,33 @@
 
     if (isWin){
       const result = awardPrize();
-
-      // Win effects
       dramaticConfetti();
       winFanfare();
 
       if (result.type === "prize"){
-        // If this was the last prize (#3), show it then immediately switch to thank-you message.
         openPopupBig(
           `YOU WON<br/><span class="gold">PRIZE NUMBER ${result.number}</span>`,
           "Show this number to claim your prize 🎁"
         );
-
-        if (result.last){
-          // After the winner sees it, they can close—next spin shows thank-you, but also auto-lock now.
-          // We'll lock immediately after close.
-          // (Still lets them read the final prize number.)
-          const handler = () => {
-            overlay.removeEventListener("click", handler);
-            // no-op here; close button will close, and then spin is disabled below
-          };
-          overlay.addEventListener("click", handler);
-          // Disable spin now (last prize has been assigned)
+        // If last prize just got assigned (#3), the next spin should show the thank-you message.
+        // (Also lock immediately so no extra prizes can be generated.)
+        if (result.last) {
+          state.done = true;
+          saveState();
           spinBtn.disabled = true;
+        } else {
+          spinBtn.disabled = false;
         }
       } else {
         allDoneMessage();
       }
     } else {
-      // Lose: no popup, just a fun toast
       loseThunk();
       showToast("So close! Spin again 🎅");
       spinBtn.disabled = false;
     }
 
     spinning = false;
-    if (isWin) spinBtn.disabled = false; // unless we locked it for done/last
-    if (state.done) spinBtn.disabled = true;
   }
 
   spinBtn.addEventListener("click", spin);
@@ -976,7 +972,6 @@
     else if (audioCtx && audioCtx.state === "running") startMusic();
   });
 
-  // If already done (persisted), lock immediately
   if (state.done) spinBtn.disabled = true;
 })();
 </script>
