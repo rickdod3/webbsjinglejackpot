@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#061b14" />
 
-  <!-- iOS “app-like” mode (works best when you Add to Home Screen) -->
+  <!-- iOS “app-like” mode (best when Added to Home Screen) -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Jingle Jackpot" />
@@ -48,6 +48,37 @@
     }
     @keyframes fall{
       to { transform: translateY(120vh) translateX(var(--drift)); opacity:.2; }
+    }
+
+    /* Mobile-safe confetti: canvas (fast, no DOM spam) */
+    #confettiCanvas{
+      position:fixed; inset:0;
+      width:100vw; height:100vh;
+      pointer-events:none;
+      z-index:60;
+    }
+    .glowBurst{
+      position:fixed;
+      left:50%; top:48%;
+      transform: translate(-50%,-50%) scale(.92);
+      width:min(920px, 96vw);
+      height:min(520px, 60vh);
+      pointer-events:none;
+      z-index:59;
+      opacity:0;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(246,211,111,.25), transparent 62%),
+        radial-gradient(circle at 35% 40%, rgba(255,255,255,.07), transparent 58%),
+        radial-gradient(circle at 66% 44%, rgba(43,210,107,.14), transparent 62%),
+        radial-gradient(circle at 58% 60%, rgba(210,43,43,.12), transparent 65%);
+    }
+    .glowBurst.on{
+      animation: glowPop 760ms ease-out forwards;
+    }
+    @keyframes glowPop{
+      0%{ opacity:0; transform: translate(-50%,-50%) scale(.90); }
+      25%{ opacity:.95; }
+      100%{ opacity:0; transform: translate(-50%,-50%) scale(1.06); }
     }
 
     .wrap{
@@ -297,9 +328,9 @@
       position:absolute; inset:-70px -70px auto -70px;
       height:280px;
       background:
-        radial-gradient(closest-side, rgba(246,211,111,.28), transparent 70%),
-        radial-gradient(closest-side, rgba(43,210,107,.20), transparent 70%),
-        radial-gradient(closest-side, rgba(210,43,43,.20), transparent 70%);
+        radial-gradient(closest-side, rgba(246,211,111,.24), transparent 70%),
+        radial-gradient(closest-side, rgba(43,210,107,.18), transparent 70%),
+        radial-gradient(closest-side, rgba(210,43,43,.18), transparent 70%);
       filter: blur(2px);
       pointer-events:none;
     }
@@ -336,47 +367,26 @@
       cursor:pointer;
       font-weight:900;
       min-width:180px;
+      transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
     }
-    .closeBtn:hover{ filter: brightness(1.05); }
+    .closeBtn:hover{ filter: brightness(1.06); }
+    .closeBtn:active{ transform: translateY(1px) scale(.99); }
 
-    /* Confetti */
-    .sparkleLayer{
-      position:fixed; inset:0; pointer-events:none;
-      z-index:60; display:none;
+    /* Highlight SPIN AGAIN */
+    .closeBtn.primary{
+      background: linear-gradient(180deg, rgba(246,211,111,1), rgba(231,179,70,1));
+      color:#1a1200;
+      border: 1px solid rgba(246,211,111,.55);
+      box-shadow:
+        0 10px 26px rgba(0,0,0,.40),
+        0 0 0 3px rgba(246,211,111,.14),
+        0 0 34px rgba(246,211,111,.22);
     }
-    .sparkleLayer.on{ display:block; }
-
-    .spark{
-      position:absolute;
-      width:10px; height:10px;
-      border-radius:3px;
-      opacity:.98;
-      filter: drop-shadow(0 8px 10px rgba(0,0,0,.25));
-      animation: confetti 1400ms cubic-bezier(.14,.85,.2,1) forwards;
-    }
-    .spark.circle{ border-radius:50%; width:11px; height:11px; }
-    .spark.ribbon{ width:6px; height:16px; border-radius:3px; }
-    @keyframes confetti{
-      0%   { transform: translate(0,0) rotate(0deg) scale(.9); opacity:0; }
-      12%  { opacity:1; }
-      100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.85); opacity:0; }
-    }
-
-    .whoosh{
-      position:fixed;
-      left:50%; top:48%;
-      transform: translate(-50%,-50%);
-      width:min(900px, 96vw);
-      height: min(520px, 60vh);
-      pointer-events:none;
-      z-index:59;
-      opacity:0;
-    }
-    .whoosh.on{ animation: whoosh 800ms ease-out forwards; }
-    @keyframes whoosh{
-      0%{ opacity:0; transform: translate(-50%,-50%) scale(.92); }
-      25%{ opacity:.9; }
-      100%{ opacity:0; transform: translate(-50%,-50%) scale(1.04); }
+    .closeBtn.primary:hover{
+      box-shadow:
+        0 12px 30px rgba(0,0,0,.44),
+        0 0 0 4px rgba(246,211,111,.16),
+        0 0 40px rgba(246,211,111,.26);
     }
 
     /* Mobile tune-ups */
@@ -395,6 +405,8 @@
 </head>
 
 <body>
+  <canvas id="confettiCanvas"></canvas>
+  <div class="glowBurst" id="glowBurst" aria-hidden="true"></div>
   <div class="snow" id="snow"></div>
 
   <div class="wrap">
@@ -475,26 +487,10 @@
       <div class="smallText" id="smallText">Show this number to claim your prize 🎁</div>
       <div class="closeRow">
         <button class="closeBtn" id="closeBtn">CLOSE</button>
-        <button class="closeBtn" id="spinAgainBtn">SPIN AGAIN</button>
+        <button class="closeBtn primary" id="spinAgainBtn">SPIN AGAIN</button>
       </div>
     </div>
   </div>
-
-  <!-- Dramatic glow -->
-  <svg class="whoosh" id="whoosh" viewBox="0 0 900 520" aria-hidden="true">
-    <defs>
-      <radialGradient id="g1" cx="50%" cy="45%" r="60%">
-        <stop offset="0%" stop-color="rgba(246,211,111,.35)"/>
-        <stop offset="60%" stop-color="rgba(43,210,107,.18)"/>
-        <stop offset="100%" stop-color="rgba(210,43,43,.00)"/>
-      </radialGradient>
-    </defs>
-    <circle cx="450" cy="250" r="210" fill="url(#g1)"/>
-    <circle cx="320" cy="210" r="130" fill="rgba(255,255,255,.06)"/>
-    <circle cx="585" cy="235" r="145" fill="rgba(246,211,111,.08)"/>
-  </svg>
-
-  <div class="sparkleLayer" id="sparkleLayer"></div>
 
 <script>
 (() => {
@@ -514,8 +510,6 @@
   const smallText = document.getElementById("smallText");
   const closeBtn = document.getElementById("closeBtn");
   const spinAgainBtn = document.getElementById("spinAgainBtn");
-  const sparkleLayer = document.getElementById("sparkleLayer");
-  const whoosh = document.getElementById("whoosh");
 
   const musicBtn = document.getElementById("musicBtn");
   const sfxBtn = document.getElementById("sfxBtn");
@@ -523,6 +517,8 @@
 
   const toast = document.getElementById("toast");
   const toastMsg = document.getElementById("toastMsg");
+
+  const glowBurst = document.getElementById("glowBurst");
 
   let spinning = false;
   let musicOn = true;
@@ -532,7 +528,7 @@
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   // -----------------------
-  // Fullscreen button (works on many devices; iPhone Safari often blocks it)
+  // Fullscreen (iPhone Safari often blocks; still works elsewhere)
   // -----------------------
   function isFullscreen(){
     return !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -555,9 +551,9 @@
   document.addEventListener("webkitfullscreenchange", () => fsBtn.setAttribute("aria-pressed", String(isFullscreen())));
 
   // -----------------------
-  // Prize tracking (1–20, #3 always last) — persisted in localStorage
+  // Prize tracking (1–20, #3 always last) — persisted
   // -----------------------
-  const STORE_KEY = "webb_jingle_jackpot_v2";
+  const STORE_KEY = "webb_jingle_jackpot_v3";
   function freshState(){
     const remaining = [];
     for (let i=1;i<=20;i++) if (i !== 3) remaining.push(i);
@@ -602,7 +598,7 @@
   }
 
   // -----------------------
-  // Audio (Web Audio) — starts on first user interaction
+  // Web Audio (Christmas-y bells + sleigh-ish ticks)
   // -----------------------
   let audioCtx = null, master = null, musicGain = null, sfxGain = null;
   let musicTimer = null, sleighTimer = null, step = 0;
@@ -629,7 +625,6 @@
       try { await audioCtx.resume(); } catch(e) {}
     }
   }
-
   function setMusic(on){
     musicOn = on;
     musicBtn.setAttribute("aria-pressed", String(on));
@@ -661,6 +656,7 @@
     o.start(time);
     o.stop(time + dur + 0.02);
   }
+
   function sleighBellTick(time, outGain, strength=1){
     const len = Math.floor(audioCtx.sampleRate * 0.03);
     const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
@@ -745,12 +741,14 @@
     src.start(t);
     src.stop(t + 0.22);
   }
+
   function reelStopChime(pitch){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
     bell(pitch, t, 0.16, sfxGain);
     sleighBellTick(t + 0.01, sfxGain, 0.7);
   }
+
   function winFanfare(){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
@@ -758,6 +756,7 @@
     run.forEach((f, i) => bell(f, t + i*0.08, 0.22, sfxGain));
     for (let i=0;i<14;i++) sleighBellTick(t + 0.12 + i*0.03, sfxGain, 0.65);
   }
+
   function loseThunk(){
     if (!sfxOn || !audioCtx) return;
     const t = audioCtx.currentTime;
@@ -771,6 +770,120 @@
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
     o.connect(g); g.connect(sfxGain);
     o.start(t); o.stop(t + 0.18);
+  }
+
+  // -----------------------
+  // Confetti (canvas) — fixes mobile freezing
+  // -----------------------
+  const confettiCanvas = document.getElementById("confettiCanvas");
+  const ctx = confettiCanvas.getContext("2d", { alpha: true });
+
+  let cw = 0, ch = 0, dpr = 1;
+  function resizeCanvas(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2); // cap for performance
+    cw = Math.floor(window.innerWidth);
+    ch = Math.floor(window.innerHeight);
+    confettiCanvas.width = Math.floor(cw * dpr);
+    confettiCanvas.height = Math.floor(ch * dpr);
+    confettiCanvas.style.width = cw + "px";
+    confettiCanvas.style.height = ch + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resizeCanvas, { passive: true });
+  window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 120), { passive: true });
+  resizeCanvas();
+
+  let particles = [];
+  let confettiRaf = null;
+  let confettiEndAt = 0;
+
+  const confettiColors = ["#f6d36f","#2bd26b","#d22b2b","#ffffff","#9be7ff","#ff9bd6"];
+
+  function makeParticle(){
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 6 + Math.random() * 10;
+    const size = 6 + Math.random() * 8;
+    const shapeType = Math.random() < 0.25 ? "circle" : "rect";
+    return {
+      x: cw * 0.5 + (Math.random()*40 - 20),
+      y: ch * 0.42 + (Math.random()*30 - 15),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (6 + Math.random()*6),
+      r: size,
+      w: size * (shapeType === "circle" ? 1 : (0.8 + Math.random()*1.2)),
+      h: size * (shapeType === "circle" ? 1 : (0.9 + Math.random()*2.0)),
+      rot: Math.random() * Math.PI,
+      vr: (Math.random()*0.28 - 0.14),
+      color: confettiColors[Math.floor(Math.random()*confettiColors.length)],
+      shape: shapeType,
+      life: 1.0
+    };
+  }
+
+  function startConfetti(durationMs = 1400){
+    // reset
+    particles = [];
+    const count = Math.max(90, Math.min(160, Math.floor(cw / 6))); // scale a bit with screen width
+    for (let i=0;i<count;i++) particles.push(makeParticle());
+
+    // glow burst (cheap, CSS)
+    glowBurst.classList.remove("on");
+    void glowBurst.offsetWidth;
+    glowBurst.classList.add("on");
+
+    confettiEndAt = performance.now() + durationMs;
+
+    if (confettiRaf) cancelAnimationFrame(confettiRaf);
+    confettiRaf = requestAnimationFrame(tickConfetti);
+  }
+
+  function tickConfetti(now){
+    ctx.clearRect(0, 0, cw, ch);
+
+    // physics
+    const gravity = 0.55;
+    const drag = 0.985;
+
+    for (let i = particles.length - 1; i >= 0; i--){
+      const p = particles[i];
+      p.vx *= drag;
+      p.vy = p.vy * drag + gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+
+      // fade out near end
+      const timeLeft = Math.max(0, confettiEndAt - now);
+      p.life = Math.min(1, timeLeft / 450);
+
+      // draw
+      ctx.save();
+      ctx.globalAlpha = 0.95 * p.life;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+
+      if (p.shape === "circle"){
+        ctx.beginPath();
+        ctx.arc(0, 0, p.r * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      }
+      ctx.restore();
+
+      // cull offscreen
+      if (p.y > ch + 60 || p.x < -60 || p.x > cw + 60) {
+        particles.splice(i, 1);
+      }
+    }
+
+    if (now < confettiEndAt || particles.length > 0){
+      confettiRaf = requestAnimationFrame(tickConfetti);
+    } else {
+      ctx.clearRect(0, 0, cw, ch);
+      confettiRaf = null;
+    }
   }
 
   // -----------------------
@@ -802,48 +915,8 @@
   }
 
   // -----------------------
-  // Effects / UI
+  // UI helpers
   // -----------------------
-  function dramaticConfetti(){
-    sparkleLayer.innerHTML = "";
-    sparkleLayer.classList.add("on");
-
-    whoosh.classList.remove("on");
-    void whoosh.offsetWidth;
-    whoosh.classList.add("on");
-
-    const colors = ["#f6d36f","#2bd26b","#d22b2b","#ffffff","#9be7ff","#ff9bd6"];
-    const shapes = ["square","circle","ribbon"];
-    const count = 160;
-
-    const originX = 50, originY = 45;
-    for (let i = 0; i < count; i++){
-      const s = document.createElement("div");
-      s.className = "spark";
-      const shape = shapes[Math.floor(Math.random()*shapes.length)];
-      if (shape !== "square") s.classList.add(shape);
-      s.style.background = colors[Math.floor(Math.random()*colors.length)];
-
-      const x = originX + (Math.random()*18 - 9);
-      const y = originY + (Math.random()*16 - 8);
-      s.style.left = x + "vw";
-      s.style.top  = y + "vh";
-
-      const angle = Math.random() * Math.PI * 2;
-      const dist  = 240 + Math.random()*520;
-      const dx = Math.cos(angle) * dist;
-      const dy = Math.sin(angle) * dist + (170 + Math.random()*320);
-      const rot = (Math.random()*900 - 450) + "deg";
-
-      s.style.setProperty("--dx", dx + "px");
-      s.style.setProperty("--dy", dy + "px");
-      s.style.setProperty("--rot", rot);
-      s.style.animationDelay = (Math.random()*170) + "ms";
-      sparkleLayer.appendChild(s);
-    }
-    setTimeout(() => sparkleLayer.classList.remove("on"), 1750);
-  }
-
   function openPopupBig(linesHtml, sub){
     winText.innerHTML = linesHtml;
     smallText.textContent = sub || "";
@@ -910,7 +983,9 @@
 
     if (isWin){
       const result = awardPrize();
-      dramaticConfetti();
+
+      // fast mobile-safe confetti
+      startConfetti(1450);
       winFanfare();
 
       if (result.type === "prize"){
@@ -918,9 +993,9 @@
           `YOU WON<br/><span class="gold">PRIZE NUMBER ${result.number}</span>`,
           "Show this number to claim your prize 🎁"
         );
-        // If last prize just got assigned (#3), the next spin should show the thank-you message.
-        // (Also lock immediately so no extra prizes can be generated.)
-        if (result.last) {
+
+        // If last prize (#3) was assigned, lock machine immediately.
+        if (result.last){
           state.done = true;
           saveState();
           spinBtn.disabled = true;
