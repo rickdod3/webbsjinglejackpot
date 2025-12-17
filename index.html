@@ -601,11 +601,76 @@
         animation: none !important;
       }
     }
+
+    /* Intro video overlay */
+    .introOverlay{
+      position:fixed; inset:0;
+      z-index:200;
+      background:#000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .introOverlay.hidden{ display:none; }
+    .introOverlay.fadeOut{ animation:introFadeOut 420ms ease forwards; pointer-events:none; }
+    @keyframes introFadeOut{ to{ opacity:0; } }
+
+    .introVideo{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+    .introControls{
+      position:absolute;
+      left:0; right:0;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      padding: 0 16px;
+      pointer-events:auto;
+    }
+    .introBtn{
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      color: rgba(243,251,247,.95);
+      padding:12px 14px;
+      border-radius:16px;
+      cursor:pointer;
+      font-weight:1000;
+      min-width:140px;
+      backdrop-filter: blur(6px);
+    }
+    .introBtn.primary{
+      background: linear-gradient(180deg, rgba(246,211,111,1), rgba(231,179,70,1));
+      color:#1a1200;
+      border: 1px solid rgba(246,211,111,.55);
+      box-shadow:
+        0 10px 26px rgba(0,0,0,.40),
+        0 0 0 3px rgba(246,211,111,.14),
+        0 0 46px rgba(246,211,111,.30);
+    }
+
   </style>
 </head>
 
 <body>
   <canvas id="confettiCanvas"></canvas>
+
+
+  <!-- Intro Video Overlay -->
+  <div class="introOverlay" id="introOverlay" aria-label="Intro video">
+    <video id="introVideo" class="introVideo" autoplay muted playsinline preload="auto">
+      <!-- Put your MP4 in your GitHub repo (example path below) -->
+      <source src="https://raw.githubusercontent.com/rickdod3/webbsjinglejackpot/540ae0f88bf1e4f6d6e47fc642bb191c1955ceb5/intro3.mp4" type="video/mp4" />
+    </video>
+    <div class="introControls">
+      <button class="introBtn" id="introSkip" type="button">Skip</button>
+      <button class="introBtn primary" id="introTap" type="button" style="display:none">Tap to Start</button>
+    </div>
+  </div>
+
 
   <div class="bonusFlash" aria-hidden="true"></div>
 
@@ -756,6 +821,63 @@
 
   const bonusTakeover = document.getElementById("bonusTakeover");
   const finalTakeover = document.getElementById("finalTakeover");
+
+
+  // ---------------------------------
+  // Intro video (autoplay, muted)
+  // ---------------------------------
+  const introOverlay = document.getElementById("introOverlay");
+  const introVideo = document.getElementById("introVideo");
+  const introSkip = document.getElementById("introSkip");
+  const introTap = document.getElementById("introTap");
+
+  // If you want the intro to play only once per tab session, set to true
+  const INTRO_ONCE_PER_TAB = true;
+
+  function hideIntro(){
+    if(!introOverlay) return;
+    introOverlay.classList.add("fadeOut");
+    setTimeout(()=>{
+      introOverlay.classList.add("hidden");
+    }, 440);
+    try{ if(INTRO_ONCE_PER_TAB) sessionStorage.setItem("jj_intro_done","1"); }catch(e){}
+  }
+
+  async function startIntro(){
+    if(!introOverlay || !introVideo) return;
+    try{
+      if(INTRO_ONCE_PER_TAB && sessionStorage.getItem("jj_intro_done")==="1"){
+        introOverlay.classList.add("hidden");
+        return;
+      }
+    }catch(e){}
+
+    // Start playback. If the browser blocks it, show a "Tap to Start" button.
+    const p = introVideo.play();
+    if(p && typeof p.catch === "function"){
+      p.catch(()=>{
+        if(introTap) introTap.style.display = "";
+      });
+    }
+  }
+
+  if(introVideo){
+    introVideo.addEventListener("ended", hideIntro);
+  }
+  if(introSkip){
+    introSkip.addEventListener("click", ()=>{
+      try{ introVideo && introVideo.pause(); }catch(e){}
+      hideIntro();
+    });
+  }
+  if(introTap){
+    introTap.addEventListener("click", ()=>{
+      if(introTap) introTap.style.display = "none";
+      try{ introVideo && (introVideo.muted = false); }catch(e){}
+      startIntro();
+    });
+  }
+
 
   let spinning=false;
   let musicOn=true;
@@ -1138,7 +1260,8 @@
       spinAgainBtn.textContent = "PLAY BONUS";
     } else if(popupMode === "end"){
       closeBtn.style.display = "none";
-      spinAgainBtn.style.display = "none";
+      spinAgainBtn.style.display = "";
+      spinAgainBtn.textContent = "PLAY AGAIN";
       popupCard.classList.add("endLoop");
     } else {
       closeBtn.style.display = "";
@@ -1164,6 +1287,22 @@
     setBonusMode(false);
     openPopup(`THANK YOU FOR PLAYING<br/><span class="gold">MERRY CHRISTMAS</span>`, "", "end");
   }
+
+  function resetGame(){
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    state = freshState();
+    saveState();
+
+    // UI reset
+    overlay.classList.remove("on");
+    popupCard.classList.remove("endLoop");
+    popupMode = "win";
+    bonusPending = false;
+    finaleRunning = false;
+    setBonusMode(false);
+    spinBtn.disabled = false;
+  }
+
 
   async function runFinalSequenceThenEnd(){
     if(finaleRunning) return;
@@ -1350,6 +1489,7 @@
   });
 
   spinAgainBtn.addEventListener("click", ()=>{
+    if(popupMode === "end") return resetGame();
     if(state.done && state.pendingFinale) return runFinalSequenceThenEnd();
     closePopup();
     spin(); // if bonusPending, next spin is the bonus
