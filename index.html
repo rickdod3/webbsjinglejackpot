@@ -10,6 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="Jingle Jackpot" />
 
   <title>Webb’s Jingle Jackpot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+
 
   <style>
     :root{
@@ -508,6 +512,7 @@
       width:min(820px, 100%);
       border-radius:28px;
       border:1px solid rgba(255,255,255,.14);
+      font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background: linear-gradient(180deg, rgba(15,58,43,.95), rgba(10,43,32,.95));
       box-shadow: 0 30px 90px rgba(0,0,0,.55);
       padding:26px 22px;
@@ -544,7 +549,7 @@
       pointer-events:none;
     }
     .winText{
-      font-weight:1100;
+      font-weight: 900;
       letter-spacing:.6px;
       line-height:1.05;
       font-size: clamp(34px, 5.6vw, 76px);
@@ -555,7 +560,7 @@
       color: var(--gold);
       text-shadow: 0 10px 34px rgba(246,211,111,.28);
     }
-    .smallText{ margin: 10px 0 0; color: rgba(243,251,247,.78); font-size: 14px; }
+    .smallText{ margin: 12px 0 0; color: rgba(243,251,247,.88); font-size: 16px; font-weight: 800; letter-spacing: .25px; }
     .closeRow{ margin-top:18px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
     .closeBtn{
       border:1px solid rgba(255,255,255,.16);
@@ -652,6 +657,92 @@
         0 0 46px rgba(246,211,111,.30);
     }
 
+  
+    /* --- Win rule diagram --- */
+    .rulesCard{
+      margin-top: 14px;
+      padding: 14px 14px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.08));
+      box-shadow: 0 12px 30px rgba(0,0,0,.22);
+      font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .rulesTitle{
+      font-weight: 900;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: rgba(243,251,247,.86);
+      margin: 0 0 10px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .rulesTitle .dot{
+      width:10px; height:10px; border-radius:99px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.9), rgba(255,255,255,.25));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 0 14px rgba(255,255,255,.18);
+    }
+    .rulesDiagram{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      flex-wrap:wrap;
+      margin: 0 0 8px;
+    }
+    .rulesCells{ display:flex; gap:8px; }
+    .rulesCell{
+      width: 52px; height: 52px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius: 14px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      font-size: 28px;
+      line-height: 1;
+    }
+    .rulesEquals{
+      font-weight: 900;
+      font-size: 20px;
+      opacity: .9;
+      padding: 0 2px;
+    }
+    .rulesWin{
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: .35px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(17, 116, 67, .25);
+      color: rgba(243,251,247,.96);
+      text-transform: uppercase;
+    }
+    .rulesNote{
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(243,251,247,.80);
+      text-align:center;
+    }
+
+    .rulesBonus{
+      margin: 10px 0 0;
+      font-size: 13px;
+      line-height: 1.4;
+      color: rgba(243,251,247,.90);
+      text-align:center;
+      font-weight: 800;
+      letter-spacing: .15px;
+    }
+    .rulesBonus strong{ font-weight: 900; }
+
+    @media (max-width: 520px){
+      .rulesCell{ width: 48px; height: 48px; font-size: 26px; }
+      .rulesWin{ font-size: 13px; }
+    }
+
   </style>
 </head>
 
@@ -745,6 +836,24 @@
               <button class="tinyBtn" id="sfxBtn" aria-pressed="true">🔊 SFX</button>
             </div>
           </div>
+
+
+          <div class="rulesCard" role="note" aria-label="How to win">
+            <div class="rulesTitle"><span class="dot" aria-hidden="true"></span> How to Win</div>
+            <div class="rulesDiagram" aria-hidden="true">
+              <div class="rulesCells">
+                <div class="rulesCell">🎄</div>
+                <div class="rulesCell">🎄</div>
+                <div class="rulesCell">🎄</div>
+              </div>
+              <div class="rulesEquals">=</div>
+              <div class="rulesWin">Win 🎁</div>
+            </div>
+            <p class="rulesNote"><strong>3 of a kind</strong> (any matching character) on the payline wins.</p>
+            <p class="rulesBonus"><strong>Bonus Round:</strong> hit <strong>🎅🎅🎅</strong> to unlock Santa’s Sleigh Bonus — your <strong>next spin</strong> becomes a BONUS SPIN with extra chaos and a guaranteed win.</p>
+          </div>
+
+
         </div>
       </div>
     </div>
