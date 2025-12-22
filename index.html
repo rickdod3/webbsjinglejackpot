@@ -743,6 +743,30 @@
       .rulesWin{ font-size: 13px; }
     }
 
+  
+    /* --- Final prize (#3) special reel glow --- */
+    .finalWinCell{
+      animation: finalPulse 1.15s ease-in-out infinite;
+      text-shadow: 0 0 14px rgba(255,215,0,.85), 0 0 26px rgba(255,215,0,.45);
+      filter: drop-shadow(0 0 18px rgba(255,215,0,.35));
+    }
+    @keyframes finalPulse{
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+  
+    /* Final prize CTA styling */
+    .finalCta{
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(255,215,0,.22), rgba(0,0,0,.10));
+      border-color: rgba(255,215,0,.35) !important;
+      box-shadow: 0 14px 34px rgba(0,0,0,.35), 0 0 26px rgba(255,215,0,.22);
+      font-weight: 900 !important;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
   </style>
 </head>
 
@@ -876,14 +900,16 @@
   // ----------------------------
   // SETTINGS
   // ----------------------------
-  const BASE_WIN_CHANCE = 0.70;
+  const BASE_WIN_CHANCE = 0.60;
   const BONUS_WIN_CHANCE = 1.00;
 
   // Santa trigger: guaranteed at least 3 times during a full 20-prize run
-  const GUARANTEED_SANTA_TRIGGERS = 3;
+  const TOTAL_SANTA_TRIGGERS = 3;
+  // We allow at most 2 Santa triggers before the final (#3), reserving the 3rd for the final-bonus sequence.
+  const GUARANTEED_SANTA_TRIGGERS = 2;
 
   // Optional extra triggers beyond guaranteed (kept low)
-  const EXTRA_SANTA_CHANCE = 0.06;      // 6% chance
+  const EXTRA_SANTA_CHANCE = 0.0;      // disabled (fixed total Santa triggers)
   const EXTRA_SANTA_COOLDOWN_WINS = 2;  // prevent clustering
 
   const SANTA_SYMBOL = "🎅";
@@ -906,6 +932,9 @@
   const symbolsAll = ["🎄","🎁","❄️","🔔","⭐","🧦","⛄","🦌","🍪", "🎅"];
   const symbolsWin = ["🎄","🎁","❄️","🔔","⭐","🧦","⛄","🦌","🍪"]; // NO SANTA in win-set
 
+  // Special symbol used ONLY for the final prize (#3)
+  const FINAL_WIN_SYMBOL = "🎅✨";
+
   const pick = (arr) => arr[Math.floor(Math.random()*arr.length)];
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -914,6 +943,13 @@
     { t: document.getElementById("r2t"), m: document.getElementById("r2m"), b: document.getElementById("r2b") },
     { t: document.getElementById("r3t"), m: document.getElementById("r3m"), b: document.getElementById("r3b") },
   ];
+
+  function setFinalPrizeEffect(on){
+    try{
+      reels.forEach(r=>r.m.classList.toggle('finalWinCell', !!on));
+    }catch(e){}
+  }
+
 
   const spinBtn = document.getElementById("spinBtn");
 
@@ -932,7 +968,22 @@
   const finalTakeover = document.getElementById("finalTakeover");
 
 
+  
   // ---------------------------------
+  // Autoplay primer (browsers require a user gesture to start audio)
+  // ---------------------------------
+  function armFirstGestureToStartMusic(){
+    const kick = ()=>{
+      try{ startMusic(); }catch(e){}
+    };
+    document.addEventListener("pointerdown", kick, {once:true, passive:true});
+    document.addEventListener("touchstart", kick, {once:true, passive:true});
+    document.addEventListener("keydown", kick, {once:true});
+  }
+  // Arm immediately so the FIRST tap/click anywhere (including on the intro video) starts the music.
+  armFirstGestureToStartMusic();
+
+// ---------------------------------
   // Intro video (autoplay, muted)
   // ---------------------------------
   const introOverlay = document.getElementById("introOverlay");
@@ -948,6 +999,8 @@
     introOverlay.classList.add("fadeOut");
     setTimeout(()=>{
       introOverlay.classList.add("hidden");
+      // Ensure music is running after a user gesture
+      startMusic();
     }, 440);
     try{ if(INTRO_ONCE_PER_TAB) sessionStorage.setItem("jj_intro_done","1"); }catch(e){}
   }
@@ -1004,7 +1057,7 @@
   // ---------------------------------
   // STATE (prizes + guaranteed santa milestones)
   // ---------------------------------
-  const STORE_KEY="webb_jingle_jackpot_v16";
+  const STORE_KEY="webb_jingle_jackpot_v18";
 
   
   // Prize configuration
@@ -1039,6 +1092,8 @@ function makeMilestones(){
       santaFired: [],
       lastExtraSantaAtWon: -999,
 
+
+      santaTotalUsed: 0,
       pendingFinale:false
     };
   }
@@ -1051,7 +1106,7 @@ function makeMilestones(){
       if(!s || !Array.isArray(s.remaining)) return freshState();
 
       const state = {
-        remaining: s.remaining.filter(n=>Number.isInteger(n)&&n>=1&&n<=PRIZE_TOTAL&&n!==FINAL_PRIZE&&n!==PENULTIMATE_PRIZE)&&n=>Number.isInteger(n)&&n>=1&&n<=PRIZE_TOTAL&&n!==FINAL_PRIZE&&n!==PENULTIMATE_PRIZE),
+        remaining: s.remaining.filter(n=>Number.isInteger(n)&&n>=1&&n<=PRIZE_TOTAL&&n!==FINAL_PRIZE&&n!==PENULTIMATE_PRIZE),
         threeWon: !!s.threeWon,
         done: !!s.done,
         spins: Number.isFinite(s.spins)?Math.max(0,Math.floor(s.spins)):0,
@@ -1127,6 +1182,17 @@ function makeMilestones(){
   let audioCtx=null, master=null, musicGain=null, sfxGain=null;
   let musicTimer=null, sleighTimer=null, step=0;
 
+  // Background music track (loops). Uses HTMLAudio so it can keep playing through the intro video + gameplay.
+  const BG_MUSIC_URL = "https://raw.githubusercontent.com/rickdod3/webbsjinglejackpot/f25abe7455fdddf2dd35c15d9b25354204da3cb7/gamesong.mp3";
+  let bgAudio = null;
+  function ensureBgAudio(){
+    if(bgAudio) return;
+    bgAudio = new Audio(BG_MUSIC_URL);
+    bgAudio.loop = true;
+    bgAudio.preload = "auto";
+    bgAudio.crossOrigin = "anonymous";
+    bgAudio.volume = 0.18; // baseline when music is ON
+  }
   function ensureAudio(){
     if(audioCtx) return;
     audioCtx=new (window.AudioContext||window.webkitAudioContext)();
@@ -1140,6 +1206,13 @@ function makeMilestones(){
   }
   function setMusic(on){
     musicOn=on; musicBtn.setAttribute("aria-pressed", String(on));
+    ensureBgAudio();
+    if(bgAudio){
+      bgAudio.volume = on ? 0.18 : 0.0;
+      if(!on){
+        try{ bgAudio.pause(); }catch(e){}
+      }
+    }
     if(!audioCtx) return;
     musicGain.gain.setTargetAtTime(on?0.10:0.0001, audioCtx.currentTime, 0.03);
   }
@@ -1224,28 +1297,23 @@ function makeMilestones(){
   }
 
   function startMusic(){
-    if(!audioCtx||musicTimer) return;
-    const bars=[
-      [523.25,659.25,783.99,659.25,880.00,659.25,783.99,659.25],
-      [698.46,587.33,784.00,587.33,880.00,587.33,784.00,587.33],
-      [783.99,659.25,987.77,659.25,1046.5,659.25,987.77,659.25],
-      [523.25,659.25,783.99,659.25,880.00,659.25,783.99,659.25],
-    ];
-    const stepMs=250;
-    musicTimer=setInterval(()=>{
-      const t=audioCtx.currentTime+0.02;
-      const bar=bars[Math.floor(step/8)%bars.length];
-      const note=bar[step%8];
-      bell(note,t,0.18,musicGain,0.16);
-      if((step%2)===1) sleighTick(t,musicGain,0.45);
-      step++;
-    },stepMs);
-    sleighTimer=setInterval(()=>{
-      const t=audioCtx.currentTime+0.02;
-      for(let i=0;i<4;i++) sleighTick(t+i*0.03,musicGain,0.30);
-    },2000);
+    ensureBgAudio();
+    if(!bgAudio) return;
+    if(!musicOn) return;
+
+    try{
+      const p = bgAudio.play();
+      if(p && typeof p.catch === "function") p.catch(()=>{});
+    }catch(e){}
+
+    // Ensure legacy synth timers are off
+    if(musicTimer){clearInterval(musicTimer); musicTimer=null;}
+    if(sleighTimer){clearInterval(sleighTimer); sleighTimer=null;}
   }
   function stopMusic(){
+    if(bgAudio){
+      try{ bgAudio.pause(); }catch(e){}
+    }
     if(musicTimer){clearInterval(musicTimer); musicTimer=null;}
     if(sleighTimer){clearInterval(sleighTimer); sleighTimer=null;}
   }
@@ -1378,6 +1446,7 @@ function makeMilestones(){
   function openPopup(html, sub, mode){
     popupMode = mode || "win";
     popupCard.classList.remove("endLoop");
+    spinAgainBtn.classList.remove("finalCta");
 
     winText.innerHTML = html;
     smallText.textContent = sub || "";
@@ -1395,6 +1464,11 @@ function makeMilestones(){
       spinAgainBtn.style.display = "";
       spinAgainBtn.textContent = "PLAY AGAIN";
       popupCard.classList.add("endLoop");
+    } else if(popupMode === "final"){
+      closeBtn.style.display = "none";
+      spinAgainBtn.style.display = "";
+      spinAgainBtn.textContent = "FINISH";
+      spinAgainBtn.classList.add("finalCta");
     } else {
       closeBtn.style.display = "";
       spinAgainBtn.style.display = "";
@@ -1407,6 +1481,7 @@ function makeMilestones(){
   function closePopup(){
     if(popupMode === "end") return;
     overlay.classList.remove("on");
+    setFinalPrizeEffect(false);
   }
 
   function setBonusMode(on){
@@ -1428,6 +1503,7 @@ function makeMilestones(){
     // UI reset
     overlay.classList.remove("on");
     popupCard.classList.remove("endLoop");
+    spinAgainBtn.classList.remove("finalCta");
     popupMode = "win";
     bonusPending = false;
     finaleRunning = false;
@@ -1462,6 +1538,11 @@ function makeMilestones(){
     if(bonusPending) return false;
     if(state.done) return false;
 
+    // Cap total Santa triggers and reserve the final one for the final prize sequence.
+    const finalReadyForPrize3 = (!state.threeWon && state.twelveWon && state.remaining.length === 0);
+    if(state.santaTotalUsed >= TOTAL_SANTA_TRIGGERS) return false;
+    if(!finalReadyForPrize3 && state.santaTotalUsed >= (TOTAL_SANTA_TRIGGERS - 1)) return false;
+
     const won = prizesWonSoFarExcludingThree(); // 0..11
 
     // Guaranteed milestones
@@ -1495,23 +1576,29 @@ function makeMilestones(){
       return;
     }
 
-    await resumeAudioIfNeeded();
+    // NOTE: This may still be blocked until the first user gesture.
     startMusic();
     setMusic(musicOn);
     setSfx(sfxOn);
 
     const isBonusSpin = bonusPending;
-    const isSantaTriggerSpin = (!isBonusSpin && shouldTriggerSantaThisSpin());
+
+    // Guarantee: the FINAL prize (#3) is always awarded on a BONUS SPIN.
+    // If we're ready for the final prize but NOT currently in bonus, force a Santa trigger to unlock bonus next.
+    const finalReadyForPrize3 = (!state.threeWon && state.twelveWon && state.remaining.length === 0);
+
+    const isSantaTriggerSpin = (!isBonusSpin && (finalReadyForPrize3 || shouldTriggerSantaThisSpin()));
 
     const profile = isBonusSpin ? BONUS : NORMAL;
 
     // IMPORTANT RULE:
     // If the triple Santa trigger spin happens, NO PRIZE can be won on that spin.
+    // Also, if it's the bonus spin and we're ready for the final prize, FORCE the win.
     const prizeWin = isSantaTriggerSpin
       ? false
-      : (isBonusSpin ? (Math.random() < BONUS_WIN_CHANCE) : (Math.random() < BASE_WIN_CHANCE));
-
-    spinning = true;
+      : ((finalReadyForPrize3 && isBonusSpin) ? true
+         : (isBonusSpin ? (Math.random() < BONUS_WIN_CHANCE) : (Math.random() < BASE_WIN_CHANCE)));
+spinning = true;
     spinBtn.disabled = true;
 
     if(isBonusSpin){
@@ -1526,15 +1613,30 @@ function makeMilestones(){
       vibrate(25);
     }
 
+    // Decide prize outcome up-front (so we can theme the reels)
+    let awarded = null; // {type:"prize", number, last}
+    if(prizeWin){
+      awarded = awardPrize();
+      if(awarded.type !== "prize") awarded = null;
+    }
+
     // Final reel middles
     let finals;
+    let isFinalPrize3 = false;
+
     if(isSantaTriggerSpin){
       // ONLY time triple Santa appears on the final line
       finals = [SANTA_SYMBOL, SANTA_SYMBOL, SANTA_SYMBOL];
-    } else if(prizeWin){
-      // WINS are NEVER Santa
-      const sym = pick(symbolsWin);
-      finals = [sym, sym, sym];
+    } else if(awarded){
+      if(awarded.number === FINAL_PRIZE){
+        // EXTRA SPECIAL: final prize (#3) gets a unique "gold Santa" win line
+        isFinalPrize3 = true;
+        finals = [FINAL_WIN_SYMBOL, FINAL_WIN_SYMBOL, FINAL_WIN_SYMBOL];
+      } else {
+        // Standard prize win line
+        const sym = pick(symbolsWin); // WINS are never plain Santa
+        finals = [sym, sym, sym];
+      }
     } else {
       // Losses are always distinct (so they can never be triple Santa)
       const a = pick(symbolsAll);
@@ -1544,7 +1646,7 @@ function makeMilestones(){
       finals = [a,b,c];
     }
 
-    await Promise.all([
+await Promise.all([
       spinReel(0, profile.d1, profile.intervalMs, finals[0]),
       spinReel(1, profile.d2, profile.intervalMs, finals[1]),
       spinReel(2, profile.d3, profile.intervalMs, finals[2]),
@@ -1563,6 +1665,9 @@ function makeMilestones(){
 
       bonusPending = true;
 
+      state.santaTotalUsed = Math.min(TOTAL_SANTA_TRIGGERS, (state.santaTotalUsed||0) + 1);
+      saveState();
+
       openPopup(
         `🎅 🎅 🎅<br/>SANTA’S <span class="gold">SLEIGH BONUS</span>`,
         `BONUS SPIN UNLOCKED`,
@@ -1576,18 +1681,30 @@ function makeMilestones(){
     }
 
     // Normal / Bonus outcomes
-    if(prizeWin){
-      const result = awardPrize();
+    if(prizeWin && awarded){
+      const result = awarded;
       if(result.type === "prize"){
         startConfetti(profile.confettiMs, profile.confettiStrength);
         winJingle();
         vibrate([40,20,40,20,40]);
 
-        openPopup(
+        if(result.number === FINAL_PRIZE){
+          // Make the final prize feel extra special
+          setFinalPrizeEffect(true);
+          startConfetti(profile.confettiMs + 1200, profile.confettiStrength + 0.8);
+          openPopup(
+            `🎅✨ JACKPOT!<br/><span class="gold">FINAL PRIZE NUMBER ${result.number}</span>`,
+            "Show this number to claim your GRAND prize 🏆",
+            "final"
+          );
+        } else {
+openPopup(
           `YOU WON<br/><span class="gold">PRIZE NUMBER ${result.number}</span>`,
           "Show this number to claim your prize 🎁",
           "win"
         );
+        }
+
 
         spinBtn.disabled = false;
 
@@ -1624,6 +1741,7 @@ function makeMilestones(){
     if(popupMode === "end") return resetGame();
     if(state.done && state.pendingFinale) return runFinalSequenceThenEnd();
     closePopup();
+    setFinalPrizeEffect(false);
     spin(); // if bonusPending, next spin is the bonus
   });
 
