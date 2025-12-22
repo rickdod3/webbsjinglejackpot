@@ -897,8 +897,8 @@
   const FINAL_TAKEOVER_MS = 5200;
   const FINAL_TO_END_GAP_MS = 1500;
 
-  const NORMAL = { intervalMs:60, d1:900, d2:1200, d3:1500, confettiStrength:1.0, confettiMs:1200 };
-  const BONUS  = { intervalMs:18, d1:2600, d2:3000, d3:3400, confettiStrength:1.9, confettiMs:2400 };
+  const NORMAL = { intervalMs:60, d1:1300, d2:2200, d3:3100, confettiStrength:1.0, confettiMs:1200 };
+  const BONUS  = { intervalMs:18, d1:3200, d2:4200, d3:5200, confettiStrength:1.9, confettiMs:2400 };
 
   // IMPORTANT:
   // - Santa can appear on reels randomly while spinning, but we NEVER allow "triple Santa win".
@@ -1004,22 +1004,33 @@
   // ---------------------------------
   // STATE (prizes + guaranteed santa milestones)
   // ---------------------------------
-  const STORE_KEY="webb_jingle_jackpot_v15";
+  const STORE_KEY="webb_jingle_jackpot_v16";
 
-  function makeMilestones(){
-    // Choose 3 unique milestones in 1..18 (so they happen before final win)
+  
+  // Prize configuration
+  const PRIZE_TOTAL = 12;
+  const FINAL_PRIZE = 3;          // must be last
+  const PENULTIMATE_PRIZE = 12;   // must be second-to-last
+  const RANDOM_PRIZES_TOTAL = PRIZE_TOTAL - 2; // everything except FINAL_PRIZE + PENULTIMATE_PRIZE
+function makeMilestones(){
+    // Choose unique milestones so the Santa trigger happens during the run (before the final prize)
+    const max = Math.max(1, PRIZE_TOTAL - 2); // 1..10 when PRIZE_TOTAL=12
     const set = new Set();
     while(set.size < GUARANTEED_SANTA_TRIGGERS){
-      set.add(1 + Math.floor(Math.random()*18)); // 1..18
+      set.add(1 + Math.floor(Math.random()*max)); // 1..max
     }
     return Array.from(set).sort((a,b)=>a-b);
   }
 
   function freshState(){
+    // Random prizes: all prize numbers 1..12 EXCEPT #3 (final) and #12 (penultimate)
     const remaining=[];
-    for(let i=1;i<=20;i++) if(i!==3) remaining.push(i);
+    for(let i=1;i<=PRIZE_TOTAL;i++){
+      if(i!==FINAL_PRIZE && i!==PENULTIMATE_PRIZE) remaining.push(i);
+    }
     return {
       remaining,
+      twelveWon:false,
       threeWon:false,
       done:false,
       spins:0,
@@ -1040,15 +1051,15 @@
       if(!s || !Array.isArray(s.remaining)) return freshState();
 
       const state = {
-        remaining: s.remaining.filter(n=>Number.isInteger(n)&&n>=1&&n<=20&&n!==3),
+        remaining: s.remaining.filter(n=>Number.isInteger(n)&&n>=1&&n<=PRIZE_TOTAL&&n!==FINAL_PRIZE&&n!==PENULTIMATE_PRIZE)&&n=>Number.isInteger(n)&&n>=1&&n<=PRIZE_TOTAL&&n!==FINAL_PRIZE&&n!==PENULTIMATE_PRIZE),
         threeWon: !!s.threeWon,
         done: !!s.done,
         spins: Number.isFinite(s.spins)?Math.max(0,Math.floor(s.spins)):0,
 
         santaMilestones: Array.isArray(s.santaMilestones) && s.santaMilestones.length
-          ? s.santaMilestones.filter(n=>Number.isInteger(n)&&n>=1&&n<=18)
+          ? s.santaMilestones.filter(n=>Number.isInteger(n)&&n>=1&&n<=Math.max(1, PRIZE_TOTAL-2))
           : makeMilestones(),
-        santaFired: Array.isArray(s.santaFired) ? s.santaFired.filter(n=>Number.isInteger(n)&&n>=1&&n<=18) : [],
+        santaFired: Array.isArray(s.santaFired) ? s.santaFired.filter(n=>Number.isInteger(n)&&n>=1&&n<=Math.max(1, PRIZE_TOTAL-2)) : [],
         lastExtraSantaAtWon: Number.isFinite(s.lastExtraSantaAtWon) ? s.lastExtraSantaAtWon : -999,
 
         pendingFinale: !!s.pendingFinale
@@ -1067,12 +1078,16 @@
   let state=loadState();
 
   function prizesWonSoFarExcludingThree(){
-    return 19 - state.remaining.length; // 0..19
+    // Count prizes won that are NOT the final prize (#3)
+    const randomWon = RANDOM_PRIZES_TOTAL - state.remaining.length; // 0..10
+    const penultimateWon = state.twelveWon ? 1 : 0; // +1 once prize #12 is awarded
+    return randomWon + penultimateWon; // 0..11
   }
 
   function awardPrize(){
     if(state.done) return {type:"done"};
 
+    // 1) Random prizes first (everything except #12 and #3)
     if(state.remaining.length>0){
       const idx=Math.floor(Math.random()*state.remaining.length);
       const prize=state.remaining[idx];
@@ -1081,12 +1096,20 @@
       return {type:"prize", number:prize, last:false};
     }
 
+    // 2) Penultimate prize is ALWAYS #12
+    if(!state.twelveWon){
+      state.twelveWon = true;
+      saveState();
+      return {type:"prize", number:PENULTIMATE_PRIZE, last:false};
+    }
+
+    // 3) Final prize is ALWAYS #3
     if(!state.threeWon){
       state.threeWon=true;
       state.done=true;
       state.pendingFinale=true; // special sequence before end popup loop
       saveState();
-      return {type:"prize", number:3, last:true};
+      return {type:"prize", number:FINAL_PRIZE, last:true};
     }
 
     state.done=true; saveState();
@@ -1439,7 +1462,7 @@
     if(bonusPending) return false;
     if(state.done) return false;
 
-    const won = prizesWonSoFarExcludingThree(); // 0..19
+    const won = prizesWonSoFarExcludingThree(); // 0..11
 
     // Guaranteed milestones
     if(state.santaMilestones.includes(won) && !state.santaFired.includes(won)){
